@@ -1,0 +1,10 @@
+[project]
+name = "godseye-backend"
+version = "0.1.0"
+description = "God's Eye — Drone video to 3D scene reconstruction backend"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

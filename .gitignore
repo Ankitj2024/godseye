@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+venv/
+.venv/
+env/
+
+# Node
+node_modules/
+dist/
+.cache/
+*.tsbuildinfo
+
+# Data (large files - don't commit)
+data/uploads/
+data/jobs/
+data/frames/
+data/processing/
+data/outputs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# Modal
+.modal/

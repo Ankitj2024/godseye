@@ -1,0 +1,49 @@
+{
+  "pipeline_stages": [
+    {
+      "name": "ingest",
+      "display_name": "Video Ingest",
+      "description": "Upload and process the raw drone video file"
+    },
+    {
+      "name": "frame_analysis",
+      "display_name": "Frame Analysis",
+      "description": "Analyze video frames for quality and coverage"
+    },
+    {
+      "name": "keyframe_selection",
+      "display_name": "Keyframe Selection",
+      "description": "Select optimal frames for 3D reconstruction"
+    },
+    {
+      "name": "reconstruction",
+      "display_name": "3D Reconstruction",
+      "description": "Build 3D geometry from selected keyframes using COLMAP + Open3D"
+    },
+    {
+      "name": "depth_enhancement",
+      "display_name": "Depth Enhancement",
+      "description": "Enhance weak geometry using learned depth estimation"
+    },
+    {
+      "name": "semantic_detection",
+      "display_name": "Semantic Detection",
+      "description": "Detect and classify objects in the scene"
+    },
+    {
+      "name": "scene_graph",
+      "display_name": "Scene Graph Construction",
+      "description": "Build structured relationships between scene objects"
+    },
+    {
+      "name": "generative_completion",
+      "display_name": "Generative Completion",
+      "description": "Fill incomplete regions with AI-generated assets"
+    },
+    {
+      "name": "packaging",
+      "display_name": "Output Packaging",
+      "description": "Package scene artifacts for viewing and export"
+    }
+  ]
+}

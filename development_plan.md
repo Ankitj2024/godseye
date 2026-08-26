@@ -3,412 +3,310 @@
 ## Document Status
 
 - Product: `God's Eye`
-- Type: Step-wise Development Plan
-- Date: August 24, 2026
-- Goal: Build the product segment by segment in the right order, with each phase producing a usable milestone.
+- Type: Backend-Only Step-Wise Development Plan
+- Date: August 26, 2026
 
 ---
 
 ## 1. Purpose
 
-This document defines the recommended build order for `God's Eye`. The goal is to avoid building everything at once and instead create the system in stable layers, where each completed segment becomes the foundation for the next one.
+This plan defines the build order for the new backend-only version of `God's Eye`.
 
-This plan is optimized for hackathon execution:
+We are no longer building:
 
-- fastest path to a working demo
-- lowest integration risk
-- clear dependency ordering
-- ability to stop at any stage and still have something demoable
+- frontend
+- web APIs
+- upload flows
+- viewer UX
 
----
+We are now building:
 
-## 2. Development Strategy
+- a local Python pipeline
+- a Modal-backed heavy compute system
+- a file-based artifact workflow
+- a root-folder output contract
 
-The system should be built in this order:
-
-1. `Core app skeleton`
-2. `Local upload and job flow`
-3. `Frame extraction and selection`
-4. `Exact reconstruction baseline`
-5. `3D viewer integration`
-6. `Progressive job UX`
-7. `Semantic object layer`
-8. `Confidence and scene graph layer`
-9. `Generative reconstruction layer`
-10. `Export, polish, and demo hardening`
-
-This order matters because:
-
-- there is no point building semantics before a scene exists
-- there is no point building generative completion before the exact baseline exists
-- there is no point polishing UX before the pipeline contract is stable
+The goal is to build the system one segment at a time, with each segment leaving behind a usable foundation.
 
 ---
 
-## 3. Build Philosophy
+## 2. Recommended Build Order
 
-Every segment should satisfy three rules:
+Build in this order:
 
-- it should be independently testable
-- it should leave behind reusable interfaces
-- it should improve the demo, not just the codebase
+1. project skeleton and local file contract
+2. CLI/script entrypoint
+3. job manifest and stage tracking
+4. frame extraction and keyframe selection
+5. Modal integration foundation
+6. exact reconstruction baseline
+7. root output packaging
+8. semantic detection outputs
+9. confidence and scene graph outputs
+10. depth enhancement
+11. generative reconstruction
+12. polish, performance, and hardening
 
-At the end of each major phase, the team should have:
-
-- something that runs
-- something that can be shown
-- something that reduces future integration uncertainty
+This order is the safest because it follows the actual dependency graph of the system.
 
 ---
 
-## 4. Priority Model
+## 3. Priority Model
 
 ## P0
 
-Must be built first. Without these, the product does not function.
+Required for the pipeline to work at all.
 
 ## P1
 
-Build after the core path works. These make the product compelling.
+Required to make the pipeline compelling and aligned with the full feature set.
 
 ## P2
 
-Build only after the MVP pipeline is stable. These improve quality, depth, or production-readiness.
+Useful improvements after the core system is stable.
 
 ---
 
-## 5. Phase-by-Phase Plan
+## 4. Phase-by-Phase Plan
 
-## Phase 0: Project Setup and Contracts
+## Phase 0: Local Project Skeleton
 
 Priority: `P0`
 
 ### Goal
 
-Create the project skeleton, define interfaces, and remove ambiguity before implementation starts.
+Set up the codebase around a backend-only pipeline shape.
 
-### Why this comes first
+### Build
 
-If the frontend, backend, storage layout, and job model are not agreed early, later integration will become messy.
-
-### Build in this phase
-
-- repo structure
-- frontend app bootstrap
-- backend app bootstrap
-- shared config and environment setup
-- local data directory structure
-- initial job model
-- initial API contract
-- artifact naming conventions
+- root folder structure
+- `src/` package layout
+- `modal/` worker layout
+- `assets/` folder
+- `work/` folder
+- `outputs/` folder
+- config conventions
 
 ### Deliverables
 
-- runnable frontend shell
-- runnable backend shell
-- empty API endpoints
-- agreed directory layout
-- basic README/setup instructions
+- agreed folder layout
+- stub entry script
+- stub worker layout
 
 ### Exit criteria
 
-- frontend starts locally
-- backend starts locally
-- backend can return a health check
-- the team agrees on job ID and artifact path conventions
+- everyone is working against the same directory and artifact structure
 
 ---
 
-## Phase 1: Upload and Job Creation
+## Phase 1: CLI Entrypoint
 
 Priority: `P0`
 
 ### Goal
 
-Get the first real user flow working: upload one video, create one job, store the file locally, and return job status.
+Make the system runnable from one local command.
 
-### Why this comes early
+### Build
 
-This is the entry point of the whole product. Everything else depends on the app reliably accepting the input and creating a persistent job.
-
-### Build in this phase
-
-- video upload UI
-- mode selection UI:
-  - `Exact Reconstruction`
-  - `Generative Reconstruction`
-- `POST /api/jobs`
-- local video storage
-- job manifest creation
-- `GET /api/jobs/{job_id}`
-- simple job list/status response
+- `run_pipeline.py`
+- CLI argument parsing
+- `--video` input
+- `--mode exact|generative`
+- optional `--output-dir`
 
 ### Deliverables
 
-- user can upload a large video
-- backend stores it locally
-- backend creates a stable job record
-- frontend can show created job status
+- one command starts the pipeline
 
 ### Exit criteria
 
-- one upload works end-to-end
-- large file handling is stable enough for demo usage
-- uploaded file lands in the expected local directory
-- job metadata persists and is reloadable
+- the script validates a video path and starts a job successfully
 
 ---
 
-## Phase 2: Job State and Progress Framework
+## Phase 2: Job Manifest and File-Based State
 
 Priority: `P0`
 
 ### Goal
 
-Create the progress architecture before heavy processing starts.
+Create stable local tracking before real processing begins.
 
-### Why this comes before reconstruction
+### Build
 
-Long-running work without progress visibility is hard to debug and hard to demo. The progress model should exist before compute stages are added.
-
-### Build in this phase
-
-- job state machine
-- progress stages
-- status polling endpoint
-- local progress persistence
-- failure state handling
-- frontend progress view
-
-### Suggested minimum stages
-
-- uploaded
-- analyzing
-- selecting_frames
-- reconstructing
-- enhancing
-- detecting
-- packaging
-- completed
-- failed
+- job ID generation
+- per-job working directory creation
+- `manifest.json`
+- stage status updates
+- local logs
 
 ### Deliverables
 
-- a job can move through mocked stages
-- UI reflects stage updates correctly
-- failures can be surfaced to the user
+- every run creates a stable job folder and manifest
 
 ### Exit criteria
 
-- mocked background jobs can update progress
-- frontend reflects stage transitions cleanly
-- job state survives page refresh
+- stage state survives failures and reruns
 
 ---
 
-## Phase 3: Frame Extraction and Intelligent Selection
+## Phase 3: Frame Extraction and Keyframe Selection
 
 Priority: `P0`
 
 ### Goal
 
-Turn the long drone video into a usable set of keyframes for reconstruction.
+Reduce the raw video to the useful reconstruction subset.
 
-### Why this comes before reconstruction
-
-This stage reduces compute cost and directly affects the quality of everything that follows.
-
-### Build in this phase
+### Build
 
 - candidate frame extraction
-- blur / sharpness scoring
-- overlap / duplication filtering
-- frame spacing heuristics
-- selected keyframe manifest
-- preview thumbnails for selected frames
+- blur/sharpness scoring
+- duplicate removal
+- spacing heuristics
+- selected frame manifest
 
 ### Deliverables
 
-- backend can extract candidate frames
-- backend can produce a selected keyframe set
-- frontend can preview selected frames for a job
+- selected keyframes saved to disk
+- selection metadata saved in manifest
 
 ### Exit criteria
 
-- a 10-minute video can produce a manageable keyframe subset
-- duplicate and poor-quality frames are filtered out
-- selected frames are stored and referenced by metadata
+- a roughly 10-minute video can be reduced to a manageable keyframe set
 
 ---
 
-## Phase 4: Exact Reconstruction Baseline
+## Phase 4: Modal Integration Foundation
 
 Priority: `P0`
 
 ### Goal
 
-Produce the first true 3D output from selected keyframes using classical reconstruction.
+Establish the local-to-Modal execution boundary.
 
-### Why this is the core of the product
+### Build
 
-This is the baseline truth layer. Every later capability depends on having this working first.
+- Modal app structure
+- worker invocation helpers
+- file staging conventions
+- artifact return conventions
+- stage-level error handling
 
-### Build in this phase
+### Deliverables
 
+- local orchestrator can invoke a Modal stage and receive a result
+
+### Exit criteria
+
+- one test stage runs remotely and writes output back into the job folder
+
+---
+
+## Phase 5: Exact Reconstruction Baseline
+
+Priority: `P0`
+
+### Goal
+
+Make the first true 3D output work.
+
+### Build
+
+- reconstruction stage contract
 - `COLMAP` integration
-- camera pose estimation
 - sparse reconstruction
-- dense point cloud or mesh generation
+- dense point cloud or mesh
 - `Open3D` post-processing
-- scene artifact persistence
 
 ### Deliverables
 
-- exact reconstruction pipeline for one job
-- output geometry saved locally
-- camera poses and mesh/point cloud artifact
+- exact reconstruction artifacts
+- reconstruction logs and metadata
 
 ### Exit criteria
 
-- at least one test video produces a usable 3D artifact
-- output can be loaded from disk reliably
-- logs and failures are visible
+- one good drone video produces a usable 3D artifact end-to-end
 
-### Notes
+### Important note
 
-Do not build generative completion before this phase is stable.
+Do not start generative work before this phase is stable.
 
 ---
 
-## Phase 5: Viewer Integration
+## Phase 6: Root Output Packaging
 
 Priority: `P0`
 
 ### Goal
 
-Make the 3D output visible in the product.
+Make final outputs appear cleanly in the root output folder.
 
-### Why it comes now
+### Build
 
-A reconstruction pipeline is not demoable if users cannot see the result inside the app.
-
-### Build in this phase
-
-- choose and integrate web 3D viewer
-- load exact reconstruction artifact
-- camera controls
-- scene loading state
-- error handling for invalid scene artifacts
+- final export folder layout
+- copy/package logic
+- summary manifest
 
 ### Deliverables
 
-- frontend can display the exact reconstruction result
-- user can navigate the 3D scene
+- `outputs/<job_id>/` contains clean deliverables
 
 ### Exit criteria
 
-- one job can be opened and viewed in-browser
-- viewer loads consistently from the local scene package
+- a user can run the script and easily find the final outputs afterward
 
 ---
 
-## Phase 6: End-to-End MVP Flow Hardening
-
-Priority: `P0`
-
-### Goal
-
-Stabilize the complete minimal flow before adding intelligence layers.
-
-### Why this phase matters
-
-If upload, job orchestration, reconstruction, and viewing are not stable together, later features will only compound instability.
-
-### Build in this phase
-
-- cleanup pass on all previous segments
-- stronger error handling
-- stage timing visibility
-- retry or resume strategy where feasible
-- better local artifact packaging
-
-### Deliverables
-
-- stable end-to-end exact-mode MVP
-- team can run a full demo with the baseline pipeline
-
-### Exit criteria
-
-- the exact-mode workflow can be run from upload to view without manual intervention
-- known failure cases are understandable
-
----
-
-## Phase 7: Semantic Object Detection Layer
+## Phase 7: Semantic Object Detection
 
 Priority: `P1`
 
 ### Goal
 
-Add scene understanding on top of the exact 3D output.
+Add object-level scene understanding.
 
-### Why this comes after the baseline MVP
+### Build
 
-Semantic information is valuable, but it should enrich a working scene rather than block the creation of one.
-
-### Build in this phase
-
-- object class detection
-- 3D cuboid estimation
-- object metadata schema
-- class confidence scores
-- API endpoint for detections
-- frontend box toggles
-- frontend class filtering
+- semantic detection worker
+- 3D object metadata schema
+- cuboid/proxy estimation
+- class confidence metadata
 
 ### Deliverables
 
-- semantic objects appear in the viewer
-- user can show/hide boxes
-- user can filter by class
+- `objects.json`
+- object provenance metadata
 
 ### Exit criteria
 
-- at least a limited class taxonomy works reliably enough for demo footage
-- detections are stored and reloadable with the job
+- at least a small class set works well enough on demo data
 
 ---
 
-## Phase 8: Confidence Layer and Scene Graph
+## Phase 8: Confidence and Scene Graph
 
 Priority: `P1`
 
 ### Goal
 
-Add explainability and structure to the scene.
+Add explainability and structure.
 
-### Why it comes here
+### Build
 
-Once semantics exist, the next most valuable improvement is helping users understand what is certain, what is inferred, and how entities relate.
-
-### Build in this phase
-
-- confidence scoring schema
-- confidence metadata export
-- confidence overlay in viewer
-- scene graph JSON generation
-- scene node and relation model
-- basic scene graph API endpoint
+- confidence metadata generation
+- scene graph generation
+- provenance tags
 
 ### Deliverables
 
-- user can inspect confidence regions or categories
-- scene graph artifact exists for each processed job
+- `confidence.json`
+- `scene_graph.json`
 
 ### Exit criteria
 
-- confidence is visible in a meaningful way
-- scene graph includes nodes, classes, provenance, and basic relationships
+- outputs clearly distinguish observed, enhanced, and inferred content
 
 ---
 
@@ -418,288 +316,135 @@ Priority: `P1`
 
 ### Goal
 
-Improve weak geometry using learned depth estimation.
+Improve weak geometry without changing the basic architecture.
 
-### Why it comes after the baseline
+### Build
 
-Depth enhancement improves quality, but it should not be required for the first working reconstruction.
-
-### Build in this phase
-
-- depth estimation stage
-- geometry enhancement or fusion logic
-- metadata for depth-assisted regions
-- progress stage integration
+- depth worker
+- fusion or enhancement step
+- depth-assisted provenance markers
 
 ### Deliverables
 
-- enhanced geometry in weak regions where feasible
-- visible metadata distinction between exact and depth-assisted regions
+- enhanced geometry outputs
+- depth-related metadata
 
 ### Exit criteria
 
-- the stage improves at least some demo scenes without breaking the baseline pipeline
+- depth enhancement improves at least one strong demo case
 
 ---
 
-## Phase 10: Generative Reconstruction Layer
+## Phase 10: Generative Reconstruction
 
 Priority: `P1`
 
 ### Goal
 
-Create the second flagship mode: `Generative Reconstruction`.
+Add the second flagship mode on top of the exact baseline.
 
-### Why this comes late
+### Build
 
-This is a showcase feature, but it is also the easiest place to introduce confusion, instability, and demo risk. It should be built only after the exact path is solid.
-
-### Build in this phase
-
-- low-confidence / ambiguity detection
-- prebuilt asset library integration
-- object-class-to-asset mapping
-- inferred object placement
-- provenance tagging
+- ambiguity detection
+- asset library mapping
+- inferred object insertion
 - separate generative scene package
-- UI switch between exact and generative views
 
 ### Deliverables
 
-- user can open an AI-completed scene variant
-- inferred objects are clearly marked
-- exact and generative results can be compared
+- `generative_scene.*`
+- inferred object metadata
 
 ### Exit criteria
 
-- generative mode works on at least one strong demo scene
-- inserted assets are visibly plausible
-- inferred content is clearly labeled
+- exact and generative outputs are both available and clearly separated
 
 ---
 
-## Phase 11: Export and Packaging
+## Phase 11: Hardening and Performance
 
 Priority: `P1`
 
 ### Goal
 
-Make outputs portable and easier to demo or share.
+Make the backend pipeline reliable enough for repeated demo runs.
 
-### Build in this phase
+### Build
 
-- export packaging
-- `GLB` or `glTF` output contract
-- `scene.json`
-- detections metadata export
-- confidence metadata export
-- downloadable artifact bundle
-
-### Deliverables
-
-- user can download a packaged result
-- output structure is consistent per job
-
-### Exit criteria
-
-- one-click export works for completed jobs
-
----
-
-## Phase 12: Demo Hardening and UX Polish
-
-Priority: `P1`
-
-### Goal
-
-Turn the working build into a convincing hackathon demo.
-
-### Build in this phase
-
-- cleaner copy and labeling
-- better loading and stage messages
-- curated demo assets
-- performance tuning
-- fallback flows for failed jobs
-- side-by-side screenshots or previews if useful
+- better logs
+- better failure messages
+- optional keep/delete intermediates behavior
+- frame count controls
+- stage timing summaries
 
 ### Deliverables
 
-- polished demo path
-- prepared backup demo materials
+- stable repeatable runs
+- clearer debugging artifacts
 
 ### Exit criteria
 
-- team can demo the product confidently end-to-end
-- judges can understand the difference between exact and generative modes quickly
+- the team can run the same demo path without manual cleanup or guessing
 
 ---
 
-## Phase 13: Advanced Features and Production Direction
+## Phase 12: Advanced Improvements
 
 Priority: `P2`
 
-### Goal
+### Candidate work
 
-Add deeper capabilities only after the MVP is fully stable.
-
-### Candidate features
-
-- metric scaling
-- multiple LOD outputs
-- richer scene graph relationships
-- more semantic classes
-- better confidence modeling
-- multi-video fusion
-- on-prem GPU worker replacement for Modal
-- enterprise deployment hardening
-
-### Exit criteria
-
-- only pursue these if the MVP and demo are already secure
+- metric scale estimation
+- multiple export formats
+- LOD generation
+- fuller asset provenance
+- richer semantic ontology
+- full on-prem worker replacement for Modal
 
 ---
 
-## 6. Recommended Segment Order Summary
+## 5. What to Build First, Without Debate
 
-If the team wants the shortest possible practical order, build in this sequence:
+If you want the shortest practical order, build exactly this:
 
-1. project skeleton
-2. upload flow
-3. job/progress framework
-4. frame extraction and selection
-5. exact reconstruction
-6. viewer
-7. stabilize end-to-end exact MVP
-8. semantic detection
-9. confidence + scene graph
-10. depth enhancement
-11. generative reconstruction
-12. export and polish
+1. local file/folder contract
+2. CLI entry script
+3. manifest and logs
+4. one Modal test stage
+5. keyframe selection
+6. exact reconstruction
+7. root output packaging
 
-This is the safest dependency order.
+Only after that should we spend real time on:
 
----
-
-## 7. What Not to Build Too Early
-
-Do not build these too early:
-
-- advanced semantic taxonomy
-- scene graph complexity
-- polished export system
-- multi-LOD outputs
-- metric scaling
-- collaboration features
-- full on-prem worker replacement
-
-These are valuable, but they should not delay the first working reconstruction demo.
+- semantics
+- confidence
+- depth enhancement
+- generative completion
 
 ---
 
-## 8. Parallel Work Suggestions
+## 6. Suggested Parallelization
 
-Some work can happen in parallel once the interfaces are defined.
+Once the file contract is fixed, work can split like this:
 
-### Parallel track A: Frontend shell
+- Track A: local orchestrator and manifests
+- Track B: Modal worker scaffolding
+- Track C: reconstruction pipeline
+- Track D: semantic and generative schemas
 
-- upload screen
-- progress screen
-- viewer shell
-
-### Parallel track B: Backend control plane
-
-- jobs API
-- local storage
-- progress persistence
-- artifact manifest logic
-
-### Parallel track C: Reconstruction pipeline
-
-- frame extraction
-- keyframe selection
-- exact reconstruction
-
-### Parallel track D: Intelligence layer
-
-- semantic schema
-- asset library preparation
-- confidence schema
-
-Important:
-
-- only parallelize after Phase 0 contracts are agreed
-- keep one owner responsible for integration contracts
+Keep one person responsible for stage contracts and artifact naming so the parts keep fitting together.
 
 ---
 
-## 9. Suggested Team Execution Model
+## 7. Final Recommendation
 
-If the team is small, assign by system layer:
+The right mindset now is:
 
-- one owner for frontend and viewer
-- one owner for backend and job orchestration
-- one owner for reconstruction and AI pipeline
+- first make it runnable
+- then make it reconstruct
+- then make it structured
+- then make it smart
 
-If the team is larger, split into:
-
-- app flow
-- reconstruction
-- semantics and generative layer
-- demo and polish
-
----
-
-## 10. Milestone Checkpoints
-
-## Checkpoint 1
-
-Upload a video and create a stable local job.
-
-## Checkpoint 2
-
-Show stage-based progress in the UI.
-
-## Checkpoint 3
-
-Generate selected keyframes from a 10-minute video.
-
-## Checkpoint 4
-
-Produce one exact 3D reconstruction artifact.
-
-## Checkpoint 5
-
-View that exact output in the app.
-
-## Checkpoint 6
-
-Overlay semantic boxes and class filters.
-
-## Checkpoint 7
-
-Show confidence and scene graph artifacts.
-
-## Checkpoint 8
-
-Switch between exact and generative reconstruction.
-
-## Checkpoint 9
-
-Export the final packaged result.
-
----
-
-## 11. Final Recommendation
-
-The team should treat `Exact Reconstruction` as the first product, and `Generative Reconstruction` as the second product layered on top of it.
-
-That means the development order should be:
-
-- first, make the pipeline work
-- then, make the scene visible
-- then, make the scene understandable
-- then, make the scene impressive
-
-In practical terms, build the product until Phase 6 before spending real time on advanced AI completion. That is the point where the foundation is strong enough for the rest of the system to land cleanly.
+That order will keep us moving fast without building unstable layers on top of an unfinished core.
 

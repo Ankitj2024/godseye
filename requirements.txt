@@ -1,22 +1,18 @@
-# God's Eye backend requirements
-# Hackathon-oriented baseline for FastAPI + reconstruction pipeline
+# God's Eye backend-only requirements
 
-# API and server
-fastapi>=0.115,<1.0
-uvicorn[standard]>=0.35,<1.0
-python-multipart>=0.0.20,<1.0
+# CLI and config
+typer>=0.16,<1.0
+rich>=14.1,<15.0
 pydantic>=2.11,<3.0
 pydantic-settings>=2.10,<3.0
-
-# Background jobs and HTTP
-httpx>=0.28,<1.0
-requests>=2.32,<3.0
-tenacity>=9.1,<10.0
-
-# File, metadata, and utilities
-orjson>=3.11,<4.0
 python-dotenv>=1.1,<2.0
 PyYAML>=6.0,<7.0
+orjson>=3.11,<4.0
+
+# General utilities
+requests>=2.32,<3.0
+httpx>=0.28,<1.0
+tenacity>=9.1,<10.0
 typing-extensions>=4.15,<5.0
 
 # Numerical and scientific computing
@@ -32,7 +28,7 @@ imageio-ffmpeg>=0.6,<1.0
 ffmpeg-python>=0.2.0,<1.0
 
 # 3D / geometry
-# open3d>=0.19,<1.0
+open3d>=0.19,<1.0
 trimesh>=4.7,<5.0
 pygltflib>=1.16,<2.0
 
@@ -47,8 +43,8 @@ safetensors>=0.6,<1.0
 scikit-image>=0.25,<1.0
 scikit-learn>=1.7,<2.0
 
-# Optional remote compute integration
+# Remote compute
 modal>=1.1,<2.0
 
-# Dev / testing
+# Testing
 pytest>=8.4,<9.0

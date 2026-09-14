@@ -87,6 +87,21 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
 
         started = time.perf_counter()
         cloud = o3d.io.read_point_cloud(str(source_path))
+
+        # Check for monocular depth enhancement point cloud to fill sparse regions
+        depth_prefix = payload.get("depth_prefix")
+        if depth_prefix:
+            depth_root = to_container_path(depth_prefix)
+            depth_candidate = depth_root / "depth_pointcloud.ply"
+            if depth_candidate.exists() and depth_candidate.stat().st_size > 0:
+                try:
+                    depth_cloud = o3d.io.read_point_cloud(str(depth_candidate))
+                    if len(depth_cloud.points) > 0:
+                        log(f"Merging {len(depth_cloud.points)} points from depth enhancement")
+                        cloud += depth_cloud
+                except Exception as exc:
+                    log(f"Notice: could not merge depth cloud: {exc}")
+
         input_points = len(cloud.points)
         if input_points == 0:
             raise ValueError(
@@ -118,8 +133,8 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
             metrics["voxel_size"] = voxel_size
             log(f"After downsample: {len(cloud.points)} points")
 
-        neighbors = int(payload.get("outlier_neighbors", 20))
-        std_ratio = float(payload.get("outlier_std_ratio", 2.0))
+        neighbors = int(payload.get("outlier_neighbors", 25))
+        std_ratio = float(payload.get("outlier_std_ratio", 1.8))
         if len(cloud.points) > neighbors:
             cloud, _ = cloud.remove_statistical_outlier(
                 nb_neighbors=neighbors, std_ratio=std_ratio
@@ -131,11 +146,12 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
         if output_points == 0:
             raise ValueError("Outlier removal discarded every point; thresholds are too strict.")
 
-        # kNN rather than radius search: SfM output has no metric scale, so a
-        # fixed radius would be meaningless across different scenes.
-        cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=30))
+        # Higher kNN normal estimation produces smoother, more stable normal fields
+        # across planar architectural walls and ground surfaces.
+        normal_knn = int(payload.get("normal_knn", 50))
+        cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=normal_knn))
         cloud.normalize_normals()
-        log("Estimated normals (kNN=30)")
+        log(f"Estimated normals (kNN={normal_knn})")
 
         clean_bbox = cloud.get_axis_aligned_bounding_box()
         metrics["bounds"] = {
@@ -249,9 +265,9 @@ def _pick_source_cloud(recon_root: Path) -> tuple[Path, str]:
 
 
 def _build_mesh(o3d, np, cloud, payload: dict[str, Any], log) -> tuple[Any, dict[str, Any]]:
-    depth = int(payload.get("poisson_depth", 10))
-    quantile = float(payload.get("density_quantile", 0.05))
-    target_triangles = int(payload.get("target_triangles", 300000))
+    depth = int(payload.get("poisson_depth", 11))
+    quantile = float(payload.get("density_quantile", 0.12))
+    target_triangles = int(payload.get("target_triangles", 350000))
 
     log(f"Poisson reconstruction (depth={depth})")
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
@@ -276,6 +292,28 @@ def _build_mesh(o3d, np, cloud, payload: dict[str, Any], log) -> tuple[Any, dict
     mesh.remove_duplicated_triangles()
     mesh.remove_duplicated_vertices()
     mesh.remove_non_manifold_edges()
+
+    # Photographic color transfer from dense point cloud to mesh vertices
+    if cloud.has_colors() and len(mesh.vertices) > 0:
+        knn_k = max(1, int(payload.get("knn_color_transfer", 3)))
+        log(f"Transferring photographic RGB colors from dense points using weighted {knn_k}-NN...")
+        pcd_tree = o3d.geometry.KDTreeFlann(cloud)
+        cloud_colors = np.asarray(cloud.colors)
+        mesh_vertices = np.asarray(mesh.vertices)
+        num_vertices = len(mesh_vertices)
+        vertex_colors = np.zeros((num_vertices, 3), dtype=np.float64)
+
+        for i in range(num_vertices):
+            k, idx, dist_sq = pcd_tree.search_knn_vector_3d(mesh_vertices[i], knn_k)
+            if k > 0:
+                dists = np.sqrt(np.asarray(dist_sq))
+                weights = 1.0 / (dists + 1e-6)
+                weights /= np.sum(weights)
+                vertex_colors[i] = np.sum(cloud_colors[idx] * weights[:, np.newaxis], axis=0)
+
+        mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
+        log(f"Transferred photographic colors to {num_vertices} mesh vertices")
+
     mesh.compute_vertex_normals()
 
     metrics = {

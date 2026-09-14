@@ -29,6 +29,12 @@ class GeometryPostprocessStage(RemoteStage):
 
     def build_payload(self, ctx: StageContext, transport: ModalTransport) -> dict[str, Any]:
         settings = ctx.config.geometry
+        depth_prefix = None
+        if StageName.DEPTH_ENHANCEMENT in ctx.manifest.stages:
+            depth_record = ctx.manifest.stages[StageName.DEPTH_ENHANCEMENT]
+            if depth_record.status.value == "completed":
+                depth_prefix = transport.remote_path("depth")
+
         request = GeometryRequest(
             job_id=ctx.job_id,
             reconstruction_prefix=transport.remote_path("reconstruction"),
@@ -39,6 +45,9 @@ class GeometryPostprocessStage(RemoteStage):
             poisson_depth=settings.poisson_depth,
             density_quantile=settings.density_quantile,
             target_triangles=settings.target_triangles,
+            normal_knn=settings.normal_knn,
+            knn_color_transfer=settings.knn_color_transfer,
+            depth_prefix=depth_prefix,
             build_mesh=settings.build_mesh,
         )
         return request.model_dump()

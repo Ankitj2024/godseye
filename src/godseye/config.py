@@ -50,8 +50,8 @@ class ModalSettings(ConfigSection):
 class FrameSettings(ConfigSection):
     """Candidate frame extraction (local, CPU)."""
 
-    sample_fps: float = 2.0
-    max_candidates: int = 3000
+    sample_fps: float = 3.0
+    max_candidates: int = 4000
     max_width: int = 1920
     jpeg_quality: int = 95
 
@@ -73,13 +73,13 @@ class KeyframeSettings(ConfigSection):
     images at all.
     """
 
-    target_count: int = 200
-    max_count: int = 400
+    target_count: int = 250
+    max_count: int = 500
     min_count: int = 20
     #: Keep frames at least this sharp relative to the median. Adaptive on
     #: purpose: a fixed percentile would always discard that fraction of frames
     #: even when the whole clip is sharp.
-    blur_relative_factor: float = 0.5
+    blur_relative_factor: float = 0.55
     absolute_blur_floor: float = 12.0
     novelty_threshold: float = 0.012
     min_spacing_frames: int = 1
@@ -103,12 +103,12 @@ class ReconstructionSettings(ConfigSection):
     exhaustive_max_images: int = 150
     run_dense: bool = True
     max_image_size: int = 2000
-    dense_max_image_size: int = 1600
+    dense_max_image_size: int = 2000
     use_gpu: bool = True
 
-    #: Drone footage is feature-rich; the COLMAP default (8192) leaves matches
-    #: on the table.
-    max_num_features: int = 16000
+    #: Drone footage is feature-rich; higher feature extraction yields denser
+    #: point clouds and sharper geometric registration.
+    max_num_features: int = 20000
 
     #: Aerial video often translates along the viewing axis (descending or
     #: flying forward), which produces small triangulation angles. COLMAP's
@@ -143,11 +143,13 @@ class GeometrySettings(ConfigSection):
     """Open3D post-processing, executed on Modal."""
 
     voxel_size: float = 0.0  # 0 disables downsampling
-    outlier_neighbors: int = 20
-    outlier_std_ratio: float = 2.0
-    poisson_depth: int = 10
-    density_quantile: float = 0.05
-    target_triangles: int = 300000
+    outlier_neighbors: int = 25
+    outlier_std_ratio: float = 1.8
+    poisson_depth: int = 11
+    density_quantile: float = 0.12
+    target_triangles: int = 350000
+    normal_knn: int = 50
+    knn_color_transfer: int = 3
     build_mesh: bool = True
 
 

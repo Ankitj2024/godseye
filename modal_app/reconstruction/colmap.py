@@ -348,14 +348,19 @@ class ColmapDriver:
         timings["stereo_s"] = result.duration_seconds
 
         fused = self.dense_dir / "fused.ply"
+        fusion_args = [
+            "--workspace_path", str(self.dense_dir),
+            "--workspace_format", "COLMAP",
+            "--input_type", "geometric",
+            "--output_path", str(fused),
+        ]
+        available_fusion_opts = self.available_options("stereo_fusion")
+        if "--StereoFusion.min_num_pixels" in available_fusion_opts:
+            fusion_args += ["--StereoFusion.min_num_pixels", "3"]
+
         result = self._run(
             "stereo_fusion",
-            [
-                "--workspace_path", str(self.dense_dir),
-                "--workspace_format", "COLMAP",
-                "--input_type", "geometric",
-                "--output_path", str(fused),
-            ],
+            fusion_args,
             "07_stereo_fusion",
         )
         timings["fusion_s"] = result.duration_seconds

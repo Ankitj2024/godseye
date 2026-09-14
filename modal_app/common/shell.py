@@ -58,6 +58,7 @@ def run_command(
     with log_path.open("a", encoding="utf-8") as log_file:
         log_file.write(f"\n$ {command}\n")
         log_file.flush()
+        print(f"[godseye] $ {command}", flush=True)
 
         process = subprocess.Popen(  # noqa: S603 - fixed argv, no shell
             [str(a) for a in args],
@@ -74,11 +75,13 @@ def run_command(
             stripped = line.rstrip("\n")
             if stripped:
                 tail.append(stripped)
+                print(stripped, flush=True)
         process.stdout.close()
         returncode = process.wait()
 
         duration = time.perf_counter() - started
         log_file.write(f"[exit {returncode} after {duration:.1f}s]\n")
+        print(f"[godseye] exit {returncode} after {duration:.1f}s", flush=True)
 
     result = CommandResult(
         command=command,

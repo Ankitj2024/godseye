@@ -51,6 +51,7 @@ class _Log:
     def __call__(self, message: str) -> None:
         line = f"{time.strftime('%H:%M:%S')} {message}"
         self.lines.append(line)
+        print(f"[godseye:geometry] {line}", flush=True)
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(line + "\n")
 
@@ -106,7 +107,7 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
 
         voxel_size = float(payload.get("voxel_size", 0.0) or 0.0)
         if voxel_size <= 0.0 and input_points > AUTO_DOWNSAMPLE_THRESHOLD and diagonal > 0:
-            voxel_size = diagonal / 1500.0
+            voxel_size = diagonal / 2500.0
             metrics["auto_downsampled"] = True
             log(
                 f"Auto-enabling voxel downsample at {voxel_size:.6f} "

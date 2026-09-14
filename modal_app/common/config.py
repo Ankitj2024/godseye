@@ -23,7 +23,7 @@ COLMAP_IMAGE_TAG = os.environ.get("GODSEYE_COLMAP_TAG", "20260729.7651")
 #: Python added on top of the COLMAP CUDA image, which ships no usable Python.
 WORKER_PYTHON_VERSION = os.environ.get("GODSEYE_WORKER_PYTHON", "3.11")
 
-COLMAP_GPU = os.environ.get("GODSEYE_COLMAP_GPU", "A10G")
+COLMAP_GPU = os.environ.get("GODSEYE_COLMAP_GPU", "T4")
 COLMAP_CPU = float(os.environ.get("GODSEYE_COLMAP_CPU", "8.0"))
 COLMAP_MEMORY_MB = int(os.environ.get("GODSEYE_COLMAP_MEMORY_MB", "32768"))
 COLMAP_TIMEOUT_SECONDS = int(os.environ.get("GODSEYE_COLMAP_TIMEOUT", str(6 * 60 * 60)))
@@ -35,12 +35,12 @@ GEOMETRY_TIMEOUT_SECONDS = int(os.environ.get("GODSEYE_GEOMETRY_TIMEOUT", str(2 
 OPEN3D_VERSION = os.environ.get("GODSEYE_OPEN3D_VERSION", "0.19.0")
 TRIMESH_VERSION = os.environ.get("GODSEYE_TRIMESH_VERSION", "4.7.4")
 
-DEPTH_GPU = os.environ.get("GODSEYE_DEPTH_GPU", "A10G")
+DEPTH_GPU = os.environ.get("GODSEYE_DEPTH_GPU", "T4")
 DEPTH_CPU = float(os.environ.get("GODSEYE_DEPTH_CPU", "4.0"))
 DEPTH_MEMORY_MB = int(os.environ.get("GODSEYE_DEPTH_MEMORY_MB", "16384"))
 DEPTH_TIMEOUT_SECONDS = int(os.environ.get("GODSEYE_DEPTH_TIMEOUT", str(2 * 60 * 60)))
 
-SEMANTIC_GPU = os.environ.get("GODSEYE_SEMANTIC_GPU", "A10G")
+SEMANTIC_GPU = os.environ.get("GODSEYE_SEMANTIC_GPU", "T4")
 SEMANTIC_CPU = float(os.environ.get("GODSEYE_SEMANTIC_CPU", "4.0"))
 SEMANTIC_MEMORY_MB = int(os.environ.get("GODSEYE_SEMANTIC_MEMORY_MB", "16384"))
 SEMANTIC_TIMEOUT_SECONDS = int(os.environ.get("GODSEYE_SEMANTIC_TIMEOUT", str(2 * 60 * 60)))

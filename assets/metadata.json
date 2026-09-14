@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "God's Eye 3D proxy asset library for generative scene completion.",
+  "assets": {
+    "vehicle": {
+      "class": "vehicle",
+      "model_file": "vehicle.obj",
+      "default_dimensions": {"x": 4.5, "y": 2.0, "z": 1.6},
+      "description": "Passenger vehicle proxy model"
+    },
+    "building": {
+      "class": "building",
+      "model_file": "building.obj",
+      "default_dimensions": {"x": 12.0, "y": 10.0, "z": 8.0},
+      "description": "Multi-story residential/commercial structure proxy"
+    },
+    "tree": {
+      "class": "tree",
+      "model_file": "tree.obj",
+      "default_dimensions": {"x": 3.5, "y": 3.5, "z": 6.0},
+      "description": "Deciduous tree proxy model"
+    }
+  }
+}

@@ -377,6 +377,60 @@ def doctor(
         raise typer.Exit(code=1)
 
 
+@app.command(name="view")
+def view_cmd(
+    job_id: Optional[str] = typer.Argument(None, help="Job ID to visualize (defaults to latest)."),
+    port: int = typer.Option(8000, "--port", "-p", help="Port to run local 3D viewer server on."),
+) -> None:
+    """Launch the interactive 3D Scene Explorer in your default browser."""
+    import http.server
+    import socketserver
+    import webbrowser
+
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    outputs_dir = repo_root / "outputs"
+
+    if not job_id:
+        if outputs_dir.is_dir():
+            jobs = sorted(
+                [d for d in outputs_dir.iterdir() if d.is_dir() and not d.name.startswith(".")],
+                key=lambda d: d.stat().st_mtime,
+                reverse=True,
+            )
+            if jobs:
+                job_id = jobs[0].name
+
+    if not job_id:
+        console.print("[red]No completed jobs found in outputs/[/red]")
+        raise typer.Exit(code=1)
+
+    socketserver.TCPServer.allow_reuse_address = True
+    active_port = port
+    try:
+        httpd = socketserver.TCPServer(("", active_port), http.server.SimpleHTTPRequestHandler)
+    except OSError:
+        active_port = 8080
+        httpd = socketserver.TCPServer(("", active_port), http.server.SimpleHTTPRequestHandler)
+
+    url = f"http://localhost:{active_port}/viewer/?job={job_id}"
+    console.print(
+        Panel(
+            f"[bold green]God's Eye 3D Scene Explorer[/bold green]\n\n"
+            f"[dim]Job:[/dim]     [cyan]{job_id}[/cyan]\n"
+            f"[dim]Serving:[/dim] [link={url}]{url}[/link]\n\n"
+            f"[dim]Press Ctrl+C to close.[/dim]",
+            border_style="cyan",
+            expand=False,
+        )
+    )
+    webbrowser.open(url)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        console.print("\n[dim]Stopped viewer server.[/dim]")
+
+
+
 def main() -> None:
     app()
 

@@ -81,6 +81,49 @@ def select_camera_poses(manifest: JobManifest, paths: JobPaths) -> list[Path]:
     return sorted(results)
 
 
+def select_depth_pointcloud(manifest: JobManifest, paths: JobPaths) -> Path | None:
+    """Depth-enhanced dense point cloud produced by the depth enhancement stage."""
+    candidate = paths.depth_dir / "depth_pointcloud.ply"
+    if candidate.exists():
+        return candidate
+    # Fall back to any depth-provenance artifact in the manifest.
+    for record in manifest.artifacts.values():
+        if record.kind == ArtifactKind.DENSE_POINTCLOUD and "depth" in record.relative_path:
+            resolved = paths.resolve(record.relative_path)
+            if resolved.exists():
+                return resolved
+    return None
+
+
+def select_generative_scene(manifest: JobManifest, paths: JobPaths) -> Path | None:
+    """Proxy-enriched GLB scene produced by the generative completion stage."""
+    candidate = paths.completion_dir / "generative_scene.glb"
+    if candidate.exists():
+        return candidate
+    for record in manifest.artifacts.values():
+        if (
+            record.kind == ArtifactKind.SCENE_EXPORT
+            and "generative" in record.relative_path
+            and record.relative_path.endswith(".glb")
+        ):
+            resolved = paths.resolve(record.relative_path)
+            if resolved.exists():
+                return resolved
+    return None
+
+
+def select_objects_document(manifest: JobManifest, paths: JobPaths) -> Path | None:
+    """Serialised ObjectsDocument from the semantic detection stage."""
+    candidate = paths.semantics_dir / "objects.json"
+    return candidate if candidate.exists() else None
+
+
+def select_scene_graph_document(manifest: JobManifest, paths: JobPaths) -> Path | None:
+    """Serialised SceneGraphDocument from the scene graph stage."""
+    candidate = paths.scene_graph_dir / "scene_graph.json"
+    return candidate if candidate.exists() else None
+
+
 def copy_deliverable(source: Path, output_dir: Path, name: str, kind: ArtifactKind) -> Deliverable:
     destination = output_dir / name
     copy_file(source, destination)

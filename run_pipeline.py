@@ -26,7 +26,7 @@ SRC_DIR = REPO_ROOT / "src"
 if SRC_DIR.is_dir() and str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-COMMANDS = {"run", "resume", "stages", "inspect", "doctor"}
+COMMANDS = {"run", "resume", "stages", "inspect", "doctor", "view"}
 PASSTHROUGH = {"--help", "-h", "--install-completion", "--show-completion"}
 
 

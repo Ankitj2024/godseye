@@ -8,6 +8,7 @@ expected to look at the output of.
 from __future__ import annotations
 
 from godseye.artifacts import packaging
+from godseye.schemas.enums import ArtifactKind, ExecutionTarget, StageName
 from godseye.artifacts.documents import (
     build_confidence_document,
     build_objects_document,
@@ -17,7 +18,7 @@ from godseye.artifacts.documents import (
 from godseye.errors import StageExecutionError
 from godseye.pipeline.context import StageContext
 from godseye.pipeline.stage import Stage, StageOutcome
-from godseye.schemas.enums import ArtifactKind, ExecutionTarget, StageName
+
 from godseye.utils.fs import atomic_write_text, ensure_dir
 
 
@@ -66,6 +67,26 @@ class OutputPackagingStage(Stage):
                 )
             exports["camera_poses"] = "cameras/"
 
+        # Phase 9: depth-enhanced point cloud.
+        depth_pc = packaging.select_depth_pointcloud(manifest, paths)
+        if depth_pc is not None:
+            deliverable = packaging.copy_deliverable(
+                depth_pc, output_dir, "depth_pointcloud.ply", ArtifactKind.DENSE_POINTCLOUD
+            )
+            copied.append(deliverable)
+            exports["depth_pointcloud_ply"] = deliverable.name
+            log.info("Packaged depth-enhanced point cloud: %s", deliverable.name)
+
+        # Phase 10: generative scene (only present in GENERATIVE mode).
+        gen_scene = packaging.select_generative_scene(manifest, paths)
+        if gen_scene is not None:
+            deliverable = packaging.copy_deliverable(
+                gen_scene, output_dir, "generative_scene.glb", ArtifactKind.SCENE_EXPORT
+            )
+            copied.append(deliverable)
+            exports["generative_scene_glb"] = deliverable.name
+            log.info("Packaged generative scene: %s", deliverable.name)
+
         if not copied:
             raise StageExecutionError(
                 "No 3D deliverables were produced, so there is nothing to package. "
@@ -82,12 +103,17 @@ class OutputPackagingStage(Stage):
 
         scene_doc = build_scene_document(manifest, exports, documents)
         self._write(output_dir / packaging.SCENE_FILENAME, scene_doc)
-        self._write(output_dir / packaging.OBJECTS_FILENAME, build_objects_document(manifest))
         self._write(
-            output_dir / packaging.SCENE_GRAPH_FILENAME, build_scene_graph_document(manifest)
+            output_dir / packaging.OBJECTS_FILENAME,
+            build_objects_document(manifest, paths),
         )
         self._write(
-            output_dir / packaging.CONFIDENCE_FILENAME, build_confidence_document(manifest)
+            output_dir / packaging.SCENE_GRAPH_FILENAME,
+            build_scene_graph_document(manifest, paths),
+        )
+        self._write(
+            output_dir / packaging.CONFIDENCE_FILENAME,
+            build_confidence_document(manifest, paths),
         )
 
         # A copy of the manifest travels with the deliverables so an output

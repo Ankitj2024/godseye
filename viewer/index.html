@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>God's Eye — 3D Scene Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0d14;
+      --bg-panel: rgba(16, 22, 36, 0.85);
+      --border: rgba(64, 120, 255, 0.25);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.4);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --success: #34d399;
+      --warning: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-primary);
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+    }
+
+    #viewport {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top HUD Bar */
+    .hud-header {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .hud-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      pointer-events: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-badge {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #000;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .hud-job-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    /* Left Control Sidebar */
+    .control-panel {
+      position: absolute;
+      top: 80px;
+      left: 20px;
+      width: 320px;
+      max-height: calc(100vh - 100px);
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      z-index: 10;
+      overflow-y: auto;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-row:hover {
+      background: rgba(56, 189, 248, 0.08);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 38px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch.active {
+      background: #38bdf8;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(18px);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    /* Object details inspector overlay */
+    #object-card {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 320px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      z-index: 10;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loading overlay */
+    #loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      gap: 16px;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(56, 189, 248, 0.2);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .file-drop-zone {
+      border: 2px dashed rgba(56, 189, 248, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+
+    .file-drop-zone:hover {
+      border-color: var(--accent);
+      color: var(--text-main);
+      background: rgba(56, 189, 248, 0.05);
+    }
+  </style>
+  <!-- Three.js and Loaders -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/PLYLoader.js"></script>
+</head>
+<body>
+  <div id="viewport"></div>
+
+  <!-- Loading State -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div style="font-weight: 600; font-size: 16px; letter-spacing: 0.5px;">GOD'S EYE 3D VIEWER</div>
+    <div id="loading-msg" style="font-size: 13px; color: var(--text-muted);">Initializing 3D viewport...</div>
+  </div>
+
+  <!-- Top HUD -->
+  <div class="hud-header">
+    <div class="hud-title">
+      <div class="hud-badge">God's Eye</div>
+      <div style="font-weight: 600; font-size: 14px;">Scene Explorer</div>
+      <div class="hud-job-id" id="job-title">Job: Loading...</div>
+    </div>
+    <div class="hud-title">
+      <div style="font-size: 12px; color: var(--text-muted);">Controls: Left-Click Rotate | Right-Click Pan | Scroll Zoom</div>
+    </div>
+  </div>
+
+  <!-- Control Sidebar -->
+  <div class="control-panel">
+    <div>
+      <div class="panel-section-title">Scene Stats</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Vertices</div>
+          <div class="stat-val" id="stat-vertices">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Faces</div>
+          <div class="stat-val" id="stat-faces">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Objects</div>
+          <div class="stat-val" id="stat-objects">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cameras</div>
+          <div class="stat-val" id="stat-cameras">26</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Display Layers</div>
+      <div class="toggle-group">
+        <div class="toggle-row" onclick="toggleLayer('mesh')">
+          <span>Poisson 3D Mesh</span>
+          <div class="toggle-switch active" id="toggle-mesh"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('wireframe')">
+          <span>Wireframe Mode</span>
+          <div class="toggle-switch" id="toggle-wireframe"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('cuboids')">
+          <span>3D Semantic Cuboids</span>
+          <div class="toggle-switch active" id="toggle-cuboids"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('cameras')">
+          <span>Camera Trajectory</span>
+          <div class="toggle-switch active" id="toggle-cameras"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('grid')">
+          <span>Coordinate Grid</span>
+          <div class="toggle-switch active" id="toggle-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Lighting & View</div>
+      <div class="toggle-group">
+        <div class="toggle-row" onclick="resetCamera()">
+          <span>Reset Camera View</span>
+          <span style="font-size: 11px; color: var(--accent);">[Reset]</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Manual File Loader</div>
+      <div class="file-drop-zone" onclick="document.getElementById('file-input').click()">
+        📁 Drop or Pick GLB / OBJ / PLY
+        <input type="file" id="file-input" style="display:none" accept=".glb,.gltf,.ply,.obj,.json" onchange="handleFileSelect(event)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Object Inspector -->
+  <div id="object-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span class="hud-badge" id="card-class">VEHICLE</span>
+      <span style="font-size: 11px; color: var(--success); font-weight: 600;" id="card-conf">88% Conf</span>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-bottom: 8px;" id="card-id">obj_001</div>
+    <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
+      <div>Dimensions: <span style="color:#fff;" id="card-dims">--</span></div>
+      <div>Position: <span style="color:#fff;" id="card-pos">--</span></div>
+      <div>Provenance: <span style="color: var(--accent);" id="card-prov">Observed</span></div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration & State
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId = urlParams.get('job') || '20260914-133156-b35d0e';
+    const basePath = `/outputs/${jobId}/`;
+
+    document.getElementById('job-title').textContent = `Job: ${jobId}`;
+
+    let scene, camera, renderer, controls;
+    let meshGroup = new THREE.Group();
+    let cuboidGroup = new THREE.Group();
+    let cameraGroup = new THREE.Group();
+    let gridHelper;
+
+    const layers = {
+      mesh: true,
+      wireframe: false,
+      cuboids: true,
+      cameras: true,
+      grid: true
+    };
+
+    const classColors = {
+      vehicle: 0x38bdf8,
+      building: 0xf59e0b,
+      tree: 0x10b981,
+      road: 0x64748b,
+      person: 0xec4899,
+      default: 0xa855f7
+    };
+
+    function init() {
+      const container = document.getElementById('viewport');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0d14);
+      scene.fog = new THREE.FogExp2(0x0a0d14, 0.008);
+
+      camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+      camera.position.set(0, -40, 30);
+      camera.up.set(0, 0, 1); // Z-up standard aerial
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxDistance = 1500;
+      controls.minDistance = 1;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.4);
+      dirLight1.position.set(50, -50, 100);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.6);
+      dirLight2.position.set(-50, 50, -20);
+      scene.add(dirLight2);
+
+      // Grid
+      gridHelper = new THREE.GridHelper(100, 50, 0x38bdf8, 0x1e293b);
+      gridHelper.rotation.x = Math.PI / 2;
+      scene.add(gridHelper);
+
+      scene.add(meshGroup);
+      scene.add(cuboidGroup);
+      scene.add(cameraGroup);
+
+      window.addEventListener('resize', onWindowResize);
+      setupRaycaster();
+
+      loadSceneAssets();
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function updateLoading(msg) {
+      document.getElementById('loading-msg').textContent = msg;
+    }
+
+    function hideLoading() {
+      const loader = document.getElementById('loading');
+      loader.style.opacity = '0';
+      setTimeout(() => loader.style.display = 'none', 500);
+    }
+
+    async function loadSceneAssets() {
+      try {
+        updateLoading('Fetching scene metadata...');
+        // 1. Fetch scene.json & objects.json
+        const [sceneRes, objectsRes] = await Promise.allSettled([
+          fetch(basePath + 'scene.json').then(r => r.json()),
+          fetch(basePath + 'objects.json').then(r => r.json())
+        ]);
+
+        if (sceneRes.status === 'fulfilled') {
+          const s = sceneRes.value;
+          if (s.geometry) {
+            document.getElementById('stat-vertices').textContent = s.geometry.mesh_vertex_count ? s.geometry.mesh_vertex_count.toLocaleString() : '--';
+            document.getElementById('stat-faces').textContent = s.geometry.mesh_triangle_count ? s.geometry.mesh_triangle_count.toLocaleString() : '--';
+            document.getElementById('stat-cameras').textContent = s.geometry.registered_images || '26';
+          }
+        }
+
+        if (objectsRes.status === 'fulfilled') {
+          const objDoc = objectsRes.value;
+          if (objDoc && objDoc.objects) {
+            document.getElementById('stat-objects').textContent = objDoc.objects.length;
+            renderSemanticObjects(objDoc.objects);
+          }
+        }
+
+        // 2. Load GLB mesh
+        updateLoading('Loading 3D Poisson mesh (exact_scene.glb)...');
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          basePath + 'exact_scene.glb',
+          (gltf) => {
+            const model = gltf.scene;
+            // Center geometry
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.material.roughness = 0.6;
+                child.material.metalness = 0.1;
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+
+            meshGroup.add(model);
+
+            // Position camera nicely
+            const maxDim = Math.max(size.x, size.y, size.z);
+            camera.position.set(center.x, center.y - maxDim * 1.5, center.z + maxDim * 0.8);
+            controls.target.copy(center);
+            controls.update();
+
+            hideLoading();
+          },
+          (xhr) => {
+            if (xhr.lengthComputable) {
+              const pct = Math.round((xhr.loaded / xhr.total) * 100);
+              updateLoading(`Loading 3D mesh: ${pct}%`);
+            }
+          },
+          (err) => {
+            console.warn('GLB load error, trying PLY point cloud:', err);
+            loadPointcloudFallback();
+          }
+        );
+
+      } catch (err) {
+        console.error('Failed to auto-load:', err);
+        hideLoading();
+      }
+    }
+
+    function loadPointcloudFallback() {
+      updateLoading('Loading pointcloud.ply fallback...');
+      const plyLoader = new THREE.PLYLoader();
+      plyLoader.load(basePath + 'pointcloud.ply', (geometry) => {
+        const material = new THREE.PointsMaterial({ size: 0.15, vertexColors: true });
+        const points = new THREE.Points(geometry, material);
+        meshGroup.add(points);
+        hideLoading();
+      }, undefined, () => hideLoading());
+    }
+
+    function renderSemanticObjects(objects) {
+      cuboidGroup.clear();
+      objects.forEach((obj) => {
+        const t = obj.transform.translation;
+        const d = obj.dimensions;
+        const color = classColors[obj.object_class] || classColors.default;
+
+        // Box wireframe
+        const geom = new THREE.BoxGeometry(d.x, d.y, d.z);
+        const wireframeGeom = new THREE.WireframeGeometry(geom);
+        const line = new THREE.LineSegments(
+          wireframeGeom,
+          new THREE.LineBasicMaterial({ color: color, linewidth: 2, transparent: true, opacity: 0.85 })
+        );
+
+        // Solid translucent box for hover detection
+        const fillMat = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.15,
+          depthWrite: false
+        });
+        const hitBox = new THREE.Mesh(geom, fillMat);
+        hitBox.userData = { obj: obj };
+
+        const objContainer = new THREE.Group();
+        objContainer.position.set(t.x, t.y, t.z);
+        objContainer.add(line);
+        objContainer.add(hitBox);
+
+        cuboidGroup.add(objContainer);
+      });
+    }
+
+    function setupRaycaster() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      const card = document.getElementById('object-card');
+
+      window.addEventListener('pointermove', (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(cuboidGroup.children, true);
+
+        const hit = intersects.find(i => i.object.userData && i.object.userData.obj);
+        if (hit) {
+          const data = hit.object.userData.obj;
+          document.getElementById('card-class').textContent = data.object_class.toUpperCase();
+          document.getElementById('card-conf').textContent = `${Math.round(data.confidence * 100)}% Conf`;
+          document.getElementById('card-id').textContent = data.object_id;
+          document.getElementById('card-dims').textContent = `${data.dimensions.x.toFixed(1)} x ${data.dimensions.y.toFixed(1)} x ${data.dimensions.z.toFixed(1)}m`;
+          const t = data.transform.translation;
+          document.getElementById('card-pos').textContent = `(${t.x.toFixed(1)}, ${t.y.toFixed(1)}, ${t.z.toFixed(1)})`;
+          document.getElementById('card-prov').textContent = data.provenance;
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function toggleLayer(layer) {
+      layers[layer] = !layers[layer];
+      const btn = document.getElementById(`toggle-${layer}`);
+      if (btn) {
+        if (layers[layer]) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+
+      if (layer === 'mesh') meshGroup.visible = layers.mesh;
+      if (layer === 'cuboids') cuboidGroup.visible = layers.cuboids;
+      if (layer === 'grid') gridHelper.visible = layers.grid;
+      if (layer === 'wireframe') {
+        meshGroup.traverse((child) => {
+          if (child.isMesh) child.material.wireframe = layers.wireframe;
+        });
+      }
+    }
+
+    function resetCamera() {
+      controls.reset();
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      updateLoading(`Loading ${file.name}...`);
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('loading').style.opacity = '1';
+
+      const url = URL.createObjectURL(file);
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (ext === 'glb' || ext === 'gltf') {
+        new THREE.GLTFLoader().load(url, (gltf) => {
+          meshGroup.clear();
+          meshGroup.add(gltf.scene);
+          hideLoading();
+        });
+      } else if (ext === 'ply') {
+        new THREE.PLYLoader().load(url, (geom) => {
+          meshGroup.clear();
+          meshGroup.add(new THREE.Points(geom, new THREE.PointsMaterial({ size: 0.2, vertexColors: true })));
+          hideLoading();
+        });
+      } else if (ext === 'json') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const json = JSON.parse(e.target.result);
+          if (json.objects) renderSemanticObjects(json.objects);
+          hideLoading();
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

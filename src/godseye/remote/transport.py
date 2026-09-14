@@ -31,6 +31,16 @@ _DEPLOY_HINT = (
 )
 
 
+def _format_elapsed(seconds: float) -> str:
+    """Format an elapsed duration as a compact human-readable string."""
+    if seconds >= 60:
+        m = int(seconds // 60)
+        s = seconds % 60
+        return f"{m}m {s:.1f}s"
+    return f"{seconds:.1f}s"
+
+
+
 @dataclass
 class TransferReport:
     file_count: int
@@ -292,7 +302,7 @@ class ModalTransport:
                     "retrieved. Rerun the stage with --force-stage.",
                     exception_type="OutputExpiredError",
                 ) from exc
-            except modal.exception.TimeoutError:
+            except (modal.exception.TimeoutError, TimeoutError, ConnectionError):
                 logger.info(
                     "Still running '%s' (%s elapsed, call %s)",
                     function_name,
@@ -312,7 +322,8 @@ class ModalTransport:
                 ) from exc
             except Exception as exc:  # noqa: BLE001
                 raise RemoteTransportError(
-                    f"Waiting on Modal function '{function_name}' failed: {exc}"
+                    f"Waiting on Modal function '{function_name}' failed: "
+                    f"{type(exc).__name__}: {exc!r}"
                 ) from exc
 
         if not isinstance(raw, dict):

@@ -289,10 +289,9 @@ def detect_semantics(payload: dict[str, Any]) -> dict[str, Any]:
             merged = False
             for existing in clustered_objects:
                 if existing["object_class"] == obj["class"]:
-                    dist = np.linalg.norm(
-                        np.array(existing["transform"]["translation"])
-                        - np.array(obj["center"])
-                    )
+                    trans = existing["transform"]["translation"]
+                    t_vec = np.array([trans["x"], trans["y"], trans["z"]], dtype=np.float32)
+                    dist = np.linalg.norm(t_vec - np.array(obj["center"], dtype=np.float32))
                     if dist < 3.0:  # within 3 units, merge
                         existing["supporting_frames"].append(obj["frame"])
                         existing["confidence"] = round(

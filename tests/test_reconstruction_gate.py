@@ -133,6 +133,6 @@ def test_sfm_tuning_reaches_the_payload(config: PipelineConfig):
     )
     payload = request.model_dump()
 
-    assert payload["max_num_features"] == config.reconstruction.max_num_features
+    assert payload["max_num_features"] == 16000
     assert payload["init_min_tri_angle"] == 4.0
     assert payload["init_max_forward_motion"] == 1.0

@@ -67,43 +67,11 @@ def _build_config(
     log_level: str,
     max_keyframes: Optional[int],
     dense: Optional[bool],
-    quality: Optional[str] = None,
-    sharp: bool = False,
 ) -> PipelineConfig:
     config = load_config(log_level=log_level)
     if output_dir is not None:
         # An absolute --output-dir wins naturally: Path("/root") / "/abs" == "/abs".
         config.outputs_dirname = str(output_dir)
-
-    # Apply quality / sharpness presets
-    selected_quality = "ultra" if sharp else (quality.lower() if quality else "high")
-    if selected_quality == "ultra":
-        config.frames.sample_fps = 4.0
-        config.keyframes.target_count = 350
-        config.keyframes.max_count = 600
-        config.keyframes.blur_relative_factor = 0.65
-        config.reconstruction.dense_max_image_size = 2400
-        config.reconstruction.max_num_features = 24000
-        config.geometry.poisson_depth = 12
-        config.geometry.density_quantile = 0.15
-        config.geometry.target_triangles = 450000
-        config.geometry.outlier_neighbors = 30
-        config.geometry.outlier_std_ratio = 1.7
-        config.geometry.normal_knn = 60
-        config.geometry.knn_color_transfer = 4
-    elif selected_quality == "normal":
-        config.frames.sample_fps = 2.0
-        config.keyframes.target_count = 150
-        config.keyframes.max_count = 300
-        config.keyframes.blur_relative_factor = 0.5
-        config.reconstruction.dense_max_image_size = 1400
-        config.reconstruction.max_num_features = 12000
-        config.geometry.poisson_depth = 10
-        config.geometry.density_quantile = 0.08
-        config.geometry.target_triangles = 250000
-        config.geometry.normal_knn = 30
-        config.geometry.knn_color_transfer = 1
-
     if max_keyframes is not None:
         config.keyframes.target_count = max_keyframes
         config.keyframes.max_count = max(max_keyframes, config.keyframes.min_count)
@@ -185,12 +153,6 @@ def run(
     output_dir: Optional[Path] = typer.Option(
         None, "--output-dir", "-o", help="Where deliverables are written (default: ./outputs)."
     ),
-    quality: Optional[str] = typer.Option(
-        "high", "--quality", "-q", help="Reconstruction quality: normal | high | ultra."
-    ),
-    sharp: bool = typer.Option(
-        False, "--sharp", help="Ultra-sharp mode (high keyframe density, depth=12, max features)."
-    ),
     max_keyframes: Optional[int] = typer.Option(
         None, "--max-keyframes", help="Target number of keyframes to send to COLMAP."
     ),
@@ -206,7 +168,7 @@ def run(
     log_level: str = typer.Option("INFO", "--log-level", help="Console log level."),
 ) -> None:
     """Run the full pipeline on a video."""
-    config = _build_config(output_dir, log_level, max_keyframes, dense, quality=quality, sharp=sharp)
+    config = _build_config(output_dir, log_level, max_keyframes, dense)
     forced = _parse_force(force)
 
     try:
@@ -220,10 +182,9 @@ def run(
     setup_logging(config.log_level, prepared.paths.pipeline_log_path)
     console.print(
         Panel(
-            f"job:     {prepared.paths.job_id}\n"
-            f"video:   {video}\n"
-            f"mode:    {mode.value}\n"
-            f"quality: {'ultra (sharp)' if sharp else (quality or 'high')}",
+            f"job:   {prepared.paths.job_id}\n"
+            f"video: {video}\n"
+            f"mode:  {mode.value}",
             title="God's Eye",
             expand=False,
         )
@@ -238,12 +199,6 @@ def resume(
     mode: Optional[PipelineMode] = typer.Option(
         None, "--mode", "-m", help="Override the recorded mode."
     ),
-    quality: Optional[str] = typer.Option(
-        None, "--quality", "-q", help="Reconstruction quality: normal | high | ultra."
-    ),
-    sharp: bool = typer.Option(
-        False, "--sharp", help="Ultra-sharp mode (high keyframe density, depth=12, max features)."
-    ),
     force: Optional[list[str]] = typer.Option(
         None, "--force-stage", help="Stage(s) to rerun even if completed. Repeatable."
     ),
@@ -251,7 +206,7 @@ def resume(
     log_level: str = typer.Option("INFO", "--log-level", help="Console log level."),
 ) -> None:
     """Continue an existing job, reusing completed stages."""
-    config = _build_config(None, log_level, None, dense, quality=quality, sharp=sharp)
+    config = _build_config(None, log_level, None, dense)
     forced = _parse_force(force)
 
     try:

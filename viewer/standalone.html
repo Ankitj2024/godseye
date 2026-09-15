@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>God's Eye — Standalone Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --colors-primary: #000000;
+      --colors-ink-deep: #090909;
+      --colors-canvas: #ffffff;
+      --colors-surface-soft: #fafafa;
+      --colors-hairline: #e5e5e5;
+      --colors-ink: #000000;
+      --colors-charcoal: #525252;
+      --colors-body: #737373;
+      --colors-mute: #a3a3a3;
+      
+      --rounded-full: 9999px;
+      --rounded-lg: 12px;
+      --rounded-none: 0px;
+
+      --font-display: -apple-system-ui-serif, ui-sans-serif, system-ui, sans-serif; /* Fallback for SF Pro Rounded */
+      --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* SF Pro Rounded approximation */
+    @supports (font-family: ui-rounded) {
+      :root {
+        --font-display: ui-rounded, system-ui, -apple-system, sans-serif;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    
+    body, html {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--colors-canvas);
+      font-family: var(--font-body);
+      color: var(--colors-ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    #viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+    /* Picker Overlay */
+    #picker-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--colors-canvas); z-index: 200;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 24px; text-align: center;
+    }
+    
+    #picker-overlay h1 { 
+      font-family: var(--font-display);
+      font-size: 36px; 
+      font-weight: 500;
+      line-height: 1.11;
+      color: var(--colors-ink); 
+    }
+    
+    #picker-overlay p { 
+      font-size: 16px; 
+      font-weight: 400;
+      color: var(--colors-body); 
+      max-width: 400px; 
+      line-height: 1.5; 
+    }
+    
+    .file-input-wrapper {
+      position: relative; overflow: hidden; display: inline-block;
+      background: var(--colors-primary); color: #ffffff; 
+      padding: 8px 20px; height: 36px;
+      border-radius: var(--rounded-full); 
+      font-weight: 500; font-size: 14px;
+      cursor: pointer; transition: background 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .file-input-wrapper:hover { background: var(--colors-ink-deep); }
+    .file-input-wrapper input[type=file] {
+      font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;
+    }
+
+    /* HUD */
+    .hud-header {
+      position: absolute; top: 24px; left: 24px; right: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 10; pointer-events: none;
+    }
+    .hud-title {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--colors-canvas);
+      padding: 8px 16px; border-radius: var(--rounded-full); 
+      border: 1px solid var(--colors-hairline);
+      pointer-events: auto;
+    }
+    .hud-badge {
+      color: var(--colors-ink); font-weight: 600; font-size: 14px;
+      font-family: var(--font-display);
+    }
+    .hud-job-id {
+      font-family: var(--font-code);
+      font-size: 14px;
+      color: var(--colors-mute);
+    }
+
+    /* Sidebar / Control Panel */
+    .control-panel {
+      position: absolute; top: 88px; left: 24px; width: 320px;
+      background: var(--colors-canvas);
+      border: 1px solid var(--colors-hairline); 
+      border-radius: var(--rounded-lg);
+      padding: 16px; z-index: 10; display: none; flex-direction: column; gap: 24px;
+    }
+    .panel-section-title {
+      font-family: var(--font-display);
+      font-size: 18px; font-weight: 500; color: var(--colors-ink);
+      margin-bottom: 12px;
+    }
+    
+    .right-panel { left: auto; right: 24px; display: none; }
+    
+    /* Tree View */
+    .tree-container { font-family: var(--font-code); font-size: 13px; max-height: calc(100vh - 160px); overflow-y: auto; }
+    .tree-folder { display: flex; align-items: center; gap: 6px; color: var(--colors-ink); cursor: pointer; padding: 4px 0; }
+    .tree-folder:hover { color: var(--colors-charcoal); }
+    .tree-items { padding-left: 20px; border-left: 1px solid var(--colors-hairline); margin-left: 7px; margin-top: 4px; display: none; }
+    .tree-items.open { display: block; }
+    .tree-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; }
+    .tree-item:hover { background: var(--colors-surface-soft); }
+    .tree-icon { opacity: 0.5; font-size: 12px; }
+    
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; background: var(--colors-surface-soft);
+      border-radius: var(--rounded-full);
+      font-size: 14px; font-weight: 400; color: var(--colors-ink);
+      cursor: pointer; margin-bottom: 8px;
+    }
+    
+    .toggle-switch {
+      position: relative; width: 36px; height: 20px;
+      background: var(--colors-hairline); border-radius: var(--rounded-full);
+    }
+    .toggle-switch.active { background: var(--colors-primary); }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 16px; height: 16px; background: #fff; border-radius: var(--rounded-full);
+      transition: transform 0.2s;
+    }
+    .toggle-switch.active::after { transform: translateX(16px); }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card {
+      background: var(--colors-surface-soft);
+      padding: 12px; border-radius: var(--rounded-lg);
+    }
+    .stat-label { font-size: 12px; color: var(--colors-body); font-weight: 400; }
+    .stat-val { font-family: var(--font-code); font-size: 16px; font-weight: 500; color: var(--colors-ink); margin-top: 4px; }
+
+    /* Buttons */
+    .btn-secondary {
+      background: var(--colors-canvas); color: var(--colors-ink);
+      border: 1px solid var(--colors-hairline);
+      border-radius: var(--rounded-full);
+      padding: 8px 20px; height: 36px;
+      font-size: 14px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      margin-top: 8px;
+    }
+
+    /* Object Card */
+    #object-card {
+      position: absolute; bottom: 24px; right: 24px; width: 320px;
+      background: var(--colors-canvas);
+      border: 1px solid var(--colors-hairline); border-radius: var(--rounded-lg);
+      padding: 24px; z-index: 10; display: none;
+    }
+    .card-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    #card-class { font-family: var(--font-display); font-weight: 500; font-size: 20px; color: var(--colors-ink); text-transform: capitalize; }
+    #card-id { font-family: var(--font-code); font-size: 12px; color: var(--colors-mute); margin-top: 4px; }
+    #card-conf { background: var(--colors-surface-soft); color: var(--colors-ink); padding: 4px 12px; border-radius: var(--rounded-full); font-size: 12px; font-weight: 500; }
+    
+    .card-details { font-size: 14px; color: var(--colors-body); display: grid; gap: 8px; }
+    .card-details-row { display: flex; justify-content: space-between; }
+    .card-details-val { color: var(--colors-ink); font-family: var(--font-code); font-size: 14px; }
+
+    /* Loading */
+    #loading {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--colors-canvas); display: none; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 100; gap: 16px;
+    }
+    .spinner {
+      width: 32px; height: 32px; border: 2px solid var(--colors-hairline);
+      border-top-color: var(--colors-primary); border-radius: var(--rounded-full); animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-msg { font-size: 16px; color: var(--colors-body); }
+  </style>
+</head>
+<body>
+
+  <!-- Folder Picker Overlay -->
+  <div id="picker-overlay">
+    <h1>God's Eye</h1>
+    <p>Select a generated output folder to load the 3D scene locally.</p>
+    <div class="file-input-wrapper">
+      <span>Choose Folder</span>
+      <input type="file" id="folder-input" webkitdirectory directory multiple />
+    </div>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <div id="loading-msg">Parsing local files...</div>
+  </div>
+
+  <div class="hud-header">
+    <div class="hud-title">
+      <div class="hud-badge">God's Eye</div>
+      <div class="hud-job-id" id="job-id-display">LOCAL FOLDER</div>
+    </div>
+  </div>
+
+  <div class="control-panel" id="main-panel">
+    <div>
+      <div class="panel-section-title">Stats</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Vertices</div>
+          <div class="stat-val" id="stat-vertices">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Faces</div>
+          <div class="stat-val" id="stat-faces">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Objects</div>
+          <div class="stat-val" id="stat-objects">--</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Cameras</div>
+          <div class="stat-val" id="stat-cameras">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">Layers</div>
+      <div class="toggle-group">
+        <div class="toggle-row" onclick="toggleLayer('mesh')">
+          <span>3D Geometry</span>
+          <div class="toggle-switch active" id="toggle-mesh"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('wireframe')">
+          <span>Wireframe</span>
+          <div class="toggle-switch" id="toggle-wireframe"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('cuboids')">
+          <span>Semantic Objects</span>
+          <div class="toggle-switch active" id="toggle-cuboids"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('pointcloud')">
+          <span>Raw Pointcloud</span>
+          <div class="toggle-switch" id="toggle-pointcloud"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('depthcloud')">
+          <span>Depth Pointcloud</span>
+          <div class="toggle-switch" id="toggle-depthcloud"></div>
+        </div>
+        <div class="toggle-row" onclick="toggleLayer('grid')">
+          <span>Environment Grid</span>
+          <div class="toggle-switch active" id="toggle-grid"></div>
+        </div>
+      </div>
+    </div>
+    
+    <button class="btn-secondary" onclick="resetCamera()">Reset Camera</button>
+  </div>
+
+  <div class="control-panel right-panel" id="object-tree-panel">
+    <div class="panel-section-title">Scene Graph</div>
+    <div id="object-tree-container" class="tree-container">
+      <div style="font-size: 13px; color: var(--colors-mute);">No objects loaded</div>
+    </div>
+  </div>
+
+  <div id="object-card">
+    <div class="card-title-row">
+      <div>
+        <div id="card-class">Vehicle</div>
+        <div id="card-id">id_123</div>
+      </div>
+      <div id="card-conf">95%</div>
+    </div>
+    <div class="card-details">
+      <div class="card-details-row"><span>Dimensions</span> <span id="card-dims" class="card-details-val"></span></div>
+      <div class="card-details-row"><span>World Pos</span> <span id="card-pos" class="card-details-val"></span></div>
+      <div class="card-details-row"><span>Source</span> <span id="card-prov" class="card-details-val" style="font-family: var(--font-body); color: var(--colors-ink);"></span></div>
+    </div>
+  </div>
+
+  <div id="viewport"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let meshGroup, cuboidGroup, gridHelper, pointcloudGroup, depthGroup;
+    
+    const layers = { mesh: true, wireframe: false, cuboids: true, grid: true, pointcloud: false, depthcloud: false };
+    const classColors = { vehicle: 0x525252, building: 0x525252, tree: 0x525252, road: 0x525252, person: 0x525252, default: 0x525252 };
+
+    // Setup ThreeJS
+    function initThree() {
+      const container = document.getElementById('viewport');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xffffff); // canvas white
+      scene.fog = new THREE.FogExp2(0xffffff, 0.005);
+
+      camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+      camera.position.set(0, -40, 30);
+      camera.up.set(0, 0, 1);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.TrackballControls(camera, renderer.domElement);
+      controls.rotateSpeed = 4.0;
+      controls.zoomSpeed = 1.2;
+      controls.panSpeed = 0.8;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+      dirLight1.position.set(50, -50, 100);
+      scene.add(dirLight1);
+
+      // Soft gray grid
+      gridHelper = new THREE.GridHelper(100, 50, 0xe5e5e5, 0xfafafa);
+      gridHelper.rotation.x = Math.PI / 2;
+      scene.add(gridHelper);
+
+      meshGroup = new THREE.Group();
+      cuboidGroup = new THREE.Group();
+      pointcloudGroup = new THREE.Group();
+      depthGroup = new THREE.Group();
+      
+      pointcloudGroup.visible = false;
+      depthGroup.visible = false;
+
+      scene.add(meshGroup);
+      scene.add(cuboidGroup);
+      scene.add(pointcloudGroup);
+      scene.add(depthGroup);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      setupRaycaster();
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    function setupRaycaster() {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      const card = document.getElementById('object-card');
+
+      window.addEventListener('pointermove', (event) => {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(cuboidGroup.children, true);
+        const hit = intersects.find(i => i.object.userData && i.object.userData.obj);
+
+        if (hit) {
+          const data = hit.object.userData.obj;
+          document.getElementById('card-class').textContent = data.object_class;
+          document.getElementById('card-conf').textContent = `${Math.round(data.confidence * 100)}% Conf`;
+          document.getElementById('card-id').textContent = data.object_id;
+          document.getElementById('card-dims').textContent = `${data.dimensions.x.toFixed(1)} x ${data.dimensions.y.toFixed(1)} x ${data.dimensions.z.toFixed(1)}m`;
+          const t = data.transform.translation;
+          document.getElementById('card-pos').textContent = `(${t.x.toFixed(1)}, ${t.y.toFixed(1)}, ${t.z.toFixed(1)})`;
+          document.getElementById('card-prov').textContent = data.provenance || 'OWLv2';
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function renderSemanticObjects(objects) {
+      cuboidGroup.clear();
+      objects.forEach((obj) => {
+        const t = obj.transform.translation;
+        const d = obj.dimensions;
+        const color = classColors[obj.object_class] || classColors.default;
+
+        const geom = new THREE.BoxGeometry(d.x, d.y, d.z);
+        const wireframeGeom = new THREE.WireframeGeometry(geom);
+        const line = new THREE.LineSegments(
+          wireframeGeom,
+          new THREE.LineBasicMaterial({ color: color, linewidth: 2, transparent: true, opacity: 0.5 })
+        );
+
+        const hitBox = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.05, depthWrite: false }));
+        hitBox.userData = { obj: obj };
+
+        const objContainer = new THREE.Group();
+        objContainer.position.set(t.x, t.y, t.z);
+        objContainer.add(line);
+        objContainer.add(hitBox);
+        cuboidGroup.add(objContainer);
+      });
+      
+      buildObjectTree(objects);
+    }
+
+    function buildObjectTree(objects) {
+      const container = document.getElementById('object-tree-container');
+      const panel = document.getElementById('object-tree-panel');
+      panel.style.display = 'flex';
+      container.innerHTML = '';
+      
+      if (objects.length === 0) {
+        container.innerHTML = '<div style="font-size: 13px; color: var(--colors-mute);">No objects found</div>';
+        return;
+      }
+
+      const byClass = {};
+      objects.forEach(obj => {
+        if (!byClass[obj.object_class]) byClass[obj.object_class] = [];
+        byClass[obj.object_class].push(obj);
+      });
+
+      Object.keys(byClass).sort().forEach(cls => {
+        const folderWrapper = document.createElement('div');
+        
+        const folder = document.createElement('div');
+        folder.className = 'tree-folder';
+        folder.innerHTML = `<span style="font-size: 10px; width: 12px;">▼</span> <span>📁 ${cls}</span>`;
+        
+        const items = document.createElement('div');
+        items.className = 'tree-items open';
+
+        folder.onclick = () => {
+          items.classList.toggle('open');
+          folder.children[0].textContent = items.classList.contains('open') ? '▼' : '▶';
+        };
+
+        byClass[cls].forEach(obj => {
+          const item = document.createElement('div');
+          item.className = 'tree-item';
+          
+          item.innerHTML = `
+            <span class="tree-icon">📄</span>
+            <span>${obj.object_id}</span>
+            <span style="color: var(--colors-mute); font-size: 11px;">${Math.round(obj.confidence * 100)}%</span>
+          `;
+          
+          item.onclick = (e) => {
+            e.stopPropagation();
+            focusObject(obj);
+          };
+          items.appendChild(item);
+        });
+
+        folderWrapper.appendChild(folder);
+        folderWrapper.appendChild(items);
+        container.appendChild(folderWrapper);
+      });
+    }
+
+    function focusObject(obj) {
+      const t = obj.transform.translation;
+      const target = new THREE.Vector3(t.x, t.y, t.z);
+      
+      controls.target.copy(target);
+      // Position camera slightly above and pulled back from the object
+      const maxD = Math.max(obj.dimensions.x, obj.dimensions.y, obj.dimensions.z);
+      const dist = Math.max(maxD * 3, 10);
+      camera.position.set(t.x, t.y - dist, t.z + dist * 0.8);
+      controls.update();
+      
+      // Auto-show cuboids layer if it's hidden so they can see what they clicked
+      if (!layers.cuboids) {
+        toggleLayer('cuboids');
+      }
+    }
+
+    function toggleLayer(layer) {
+      layers[layer] = !layers[layer];
+      const btn = document.getElementById(`toggle-${layer}`);
+      if (btn) {
+        if (layers[layer]) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+
+      if (layer === 'mesh') meshGroup.visible = layers.mesh;
+      if (layer === 'cuboids') cuboidGroup.visible = layers.cuboids;
+      if (layer === 'pointcloud') pointcloudGroup.visible = layers.pointcloud;
+      if (layer === 'depthcloud') depthGroup.visible = layers.depthcloud;
+      if (layer === 'grid') gridHelper.visible = layers.grid;
+      if (layer === 'wireframe') {
+        meshGroup.traverse((child) => {
+          if (child.isMesh) child.material.wireframe = layers.wireframe;
+        });
+      }
+    }
+
+    function resetCamera() { controls.reset(); }
+
+    function updateLoading(msg) {
+      document.getElementById('loading-msg').textContent = msg;
+    }
+
+    // Local Directory Handling
+    document.getElementById('folder-input').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      document.getElementById('picker-overlay').style.display = 'none';
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('main-panel').style.display = 'flex';
+
+      // Parse folder name for job ID display
+      const folderName = files[0].webkitRelativePath.split('/')[0];
+      document.getElementById('job-id-display').textContent = folderName;
+
+      const getFile = (name) => files.find(f => f.name === name);
+      
+      const glbFile = getFile('exact_scene.glb');
+      const objectsFile = getFile('objects.json');
+      const sceneFile = getFile('scene.json');
+      const rawPlyFile = getFile('pointcloud.ply');
+      const depthPlyFile = getFile('depth_pointcloud.ply');
+
+      // 1. Load Stats
+      if (sceneFile) {
+        const text = await sceneFile.text();
+        try {
+          const s = JSON.parse(text);
+          if (s.geometry) {
+            document.getElementById('stat-vertices').textContent = s.geometry.mesh_vertex_count ? s.geometry.mesh_vertex_count.toLocaleString() : '--';
+            document.getElementById('stat-faces').textContent = s.geometry.mesh_triangle_count ? s.geometry.mesh_triangle_count.toLocaleString() : '--';
+            document.getElementById('stat-cameras').textContent = s.geometry.registered_images || '--';
+          }
+        } catch (err) { console.error("Error parsing scene.json", err); }
+      }
+
+      // 2. Load Semantics
+      if (objectsFile) {
+        const text = await objectsFile.text();
+        try {
+          const objDoc = JSON.parse(text);
+          if (objDoc.objects) {
+            document.getElementById('stat-objects').textContent = objDoc.objects.length;
+            renderSemanticObjects(objDoc.objects);
+          }
+        } catch (err) { console.error("Error parsing objects.json", err); }
+      }
+
+      // 3. Load 3D Geometry
+      if (glbFile) {
+        updateLoading('Loading exact_scene.glb...');
+        const url = URL.createObjectURL(glbFile);
+        const loader = new THREE.GLTFLoader();
+        loader.load(url, (gltf) => {
+          const model = gltf.scene;
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.material.roughness = 0.6;
+              child.material.metalness = 0.1;
+            }
+          });
+
+          meshGroup.add(model);
+          const maxDim = Math.max(size.x, size.y, size.z);
+          camera.position.set(center.x, center.y - maxDim * 1.5, center.z + maxDim * 0.8);
+          controls.target.copy(center);
+          controls.update();
+
+          URL.revokeObjectURL(url);
+          document.getElementById('loading').style.display = 'none';
+        });
+      } else {
+        document.getElementById('loading').style.display = 'none';
+      }
+
+      // 4. Load Raw Pointcloud (hidden by default)
+      if (rawPlyFile) {
+        const url = URL.createObjectURL(rawPlyFile);
+        const loader = new THREE.PLYLoader();
+        loader.load(url, (geom) => {
+          const material = new THREE.PointsMaterial({ size: 0.1, vertexColors: true });
+          const points = new THREE.Points(geom, material);
+          pointcloudGroup.add(points);
+          URL.revokeObjectURL(url);
+        });
+      }
+
+      // 5. Load Depth Pointcloud (hidden by default)
+      if (depthPlyFile) {
+        const url = URL.createObjectURL(depthPlyFile);
+        const loader = new THREE.PLYLoader();
+        loader.load(url, (geom) => {
+          const material = new THREE.PointsMaterial({ size: 0.15, vertexColors: true });
+          const points = new THREE.Points(geom, material);
+          depthGroup.add(points);
+          URL.revokeObjectURL(url);
+        });
+      }
+    });
+
+    initThree();
+  </script>
+</body>
+</html>

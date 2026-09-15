@@ -119,8 +119,8 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
             metrics["voxel_size"] = voxel_size
             log(f"After downsample: {len(cloud.points)} points")
 
-        neighbors = int(payload.get("outlier_neighbors", 20))
-        std_ratio = float(payload.get("outlier_std_ratio", 2.0))
+        neighbors = int(payload.get("outlier_neighbors", 30))
+        std_ratio = float(payload.get("outlier_std_ratio", 1.5))
         if len(cloud.points) > neighbors:
             cloud, _ = cloud.remove_statistical_outlier(
                 nb_neighbors=neighbors, std_ratio=std_ratio
@@ -134,9 +134,10 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
 
         # kNN rather than radius search: SfM output has no metric scale, so a
         # fixed radius would be meaningless across different scenes.
-        cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=30))
+        normal_knn = int(payload.get("normal_knn", 50))
+        cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=normal_knn))
         cloud.normalize_normals()
-        log("Estimated normals (kNN=30)")
+        log(f"Estimated normals (kNN={normal_knn})")
 
         clean_bbox = cloud.get_axis_aligned_bounding_box()
         metrics["bounds"] = {
@@ -161,7 +162,8 @@ def postprocess_geometry(payload: dict[str, Any]) -> dict[str, Any]:
                     f"only {output_points} points survived cleaning; meshing would be noise"
                 )
             else:
-                mesh, mesh_metrics = _build_mesh(o3d, np, cloud, payload, log)
+                knn_color = int(payload.get("knn_color_transfer", 1))
+                mesh, mesh_metrics = _build_mesh(o3d, np, cloud, payload, log, knn_color)
                 metrics.update(mesh_metrics)
         else:
             mesh_skipped_reason = "disabled by configuration"
@@ -249,10 +251,10 @@ def _pick_source_cloud(recon_root: Path) -> tuple[Path, str]:
     )
 
 
-def _build_mesh(o3d, np, cloud, payload: dict[str, Any], log) -> tuple[Any, dict[str, Any]]:
-    depth = int(payload.get("poisson_depth", 10))
-    quantile = float(payload.get("density_quantile", 0.05))
-    target_triangles = int(payload.get("target_triangles", 300000))
+def _build_mesh(o3d, np, cloud, payload: dict[str, Any], log, knn_color: int = 1) -> tuple[Any, dict[str, Any]]:
+    depth = int(payload.get("poisson_depth", 12))
+    quantile = float(payload.get("density_quantile", 0.12))
+    target_triangles = int(payload.get("target_triangles", 1000000))
 
     log(f"Poisson reconstruction (depth={depth})")
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
@@ -279,12 +281,30 @@ def _build_mesh(o3d, np, cloud, payload: dict[str, Any], log) -> tuple[Any, dict
     mesh.remove_non_manifold_edges()
     mesh.compute_vertex_normals()
 
+    # Transfer per-vertex colors from the source point cloud to the Poisson
+    # mesh. Poisson reconstruction does not preserve vertex colors, so we
+    # look up the nearest source point(s) for each mesh vertex.
+    if cloud.has_colors() and len(mesh.vertices) > 0:
+        kd_tree = o3d.geometry.KDTreeFlann(cloud)
+        cloud_colors = np.asarray(cloud.colors)
+        mesh_verts = np.asarray(mesh.vertices)
+        vertex_colors = np.zeros((len(mesh_verts), 3), dtype=np.float64)
+
+        knn_color = max(1, knn_color)
+        for i, vert in enumerate(mesh_verts):
+            _, idx, _ = kd_tree.search_knn_vector_3d(vert, knn_color)
+            vertex_colors[i] = cloud_colors[idx].mean(axis=0)
+
+        mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
+        log(f"Transferred vertex colors from point cloud (kNN={knn_color})")
+
     metrics = {
         "mesh_vertex_count": len(mesh.vertices),
         "mesh_triangle_count": len(mesh.triangles),
         "mesh_raw_triangle_count": raw_triangles,
         "poisson_depth": depth,
         "density_quantile": quantile,
+        "knn_color_transfer": knn_color,
     }
     log(f"Final mesh: {metrics['mesh_vertex_count']}v / {metrics['mesh_triangle_count']}f")
     return mesh, metrics

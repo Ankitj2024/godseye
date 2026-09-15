@@ -64,11 +64,11 @@ class ReconstructionRequest(RemoteModel):
     single_camera: bool = True
     matcher: str = "auto"
     run_dense: bool = True
-    max_image_size: int = 2000
-    dense_max_image_size: int = 1600
+    max_image_size: int = 3200
+    dense_max_image_size: int = 1920
     use_gpu: bool = True
     mapper_threads: int = 0
-    max_num_features: int = 16000
+    max_num_features: int = 40000
     init_min_tri_angle: float = 4.0
     init_max_forward_motion: float = 1.0
     init_num_trials: int = 400
@@ -81,11 +81,13 @@ class GeometryRequest(RemoteModel):
     reconstruction_prefix: str
     output_prefix: str
     voxel_size: float = 0.0
-    outlier_neighbors: int = 20
-    outlier_std_ratio: float = 2.0
-    poisson_depth: int = 10
-    density_quantile: float = 0.05
-    target_triangles: int = 300000
+    outlier_neighbors: int = 30
+    outlier_std_ratio: float = 1.5
+    poisson_depth: int = 12
+    density_quantile: float = 0.12
+    target_triangles: int = 1000000
+    normal_knn: int = 50
+    knn_color_transfer: int = 1
     build_mesh: bool = True
 
 

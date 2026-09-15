@@ -39,6 +39,8 @@ class GeometryPostprocessStage(RemoteStage):
             poisson_depth=settings.poisson_depth,
             density_quantile=settings.density_quantile,
             target_triangles=settings.target_triangles,
+            normal_knn=settings.normal_knn,
+            knn_color_transfer=settings.knn_color_transfer,
             build_mesh=settings.build_mesh,
         )
         return request.model_dump()

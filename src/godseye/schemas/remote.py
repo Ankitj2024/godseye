@@ -60,6 +60,7 @@ class ReconstructionRequest(RemoteModel):
     job_id: str
     frames_prefix: str
     output_prefix: str
+    masks_prefix: str | None = None
     camera_model: str = "OPENCV"
     single_camera: bool = True
     matcher: str = "auto"
@@ -114,6 +115,19 @@ class SemanticRequest(RemoteModel):
     confidence_threshold: float = 0.35
     classes: list[str] = Field(
         default_factory=lambda: ["vehicle", "building", "tree", "road", "person"]
+    )
+    use_gpu: bool = True
+
+
+class SemanticMaskingRequest(RemoteModel):
+    """Payload for the 2D semantic masking worker."""
+
+    job_id: str
+    frames_prefix: str
+    output_prefix: str
+    confidence_threshold: float = 0.35
+    classes: list[str] = Field(
+        default_factory=lambda: ["vehicle", "person"]
     )
     use_gpu: bool = True
 

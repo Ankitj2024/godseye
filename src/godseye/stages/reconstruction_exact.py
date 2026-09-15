@@ -40,7 +40,6 @@ class ExactReconstructionStage(RemoteStage):
             )
 
         remote_frames = transport.remote_path("frames")
-        transport.remove_prefix(remote_frames)
         report = transport.upload_dir(frames_dir, remote_frames)
         return {
             "uploaded_keyframes": report.file_count,

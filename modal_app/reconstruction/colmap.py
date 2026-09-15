@@ -57,11 +57,13 @@ class ColmapDriver:
         workspace: Path,
         log_dir: Path,
         use_gpu: bool = True,
+        masks_dir: Path | None = None,
     ) -> None:
         self.images_dir = images_dir
         self.workspace = workspace
         self.log_dir = log_dir
         self.use_gpu = use_gpu
+        self.masks_dir = masks_dir
 
         self.database_path = workspace / "database.db"
         self.sparse_dir = workspace / "sparse"
@@ -144,6 +146,9 @@ class ColmapDriver:
             "--ImageReader.single_camera", "1" if single_camera else "0",
             "--ImageReader.camera_model", camera_model,
         ]
+
+        if self.masks_dir and self.masks_dir.exists():
+            args += ["--ImageReader.mask_path", str(self.masks_dir)]
 
         gpu_option = self.resolve_option(
             "feature_extractor",

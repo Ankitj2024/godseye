@@ -96,6 +96,10 @@ class JobPaths:
         return self.job_dir / "semantics"
 
     @property
+    def masking_dir(self) -> Path:
+        return self.job_dir / "masking"
+
+    @property
     def scene_graph_dir(self) -> Path:
         return self.job_dir / "scene_graph"
 
@@ -127,6 +131,7 @@ class JobPaths:
             StageName.RECONSTRUCTION_EXACT: self.reconstruction_dir,
             StageName.GEOMETRY_POSTPROCESS: self.geometry_dir,
             StageName.DEPTH_ENHANCEMENT: self.depth_dir,
+            StageName.SEMANTIC_MASKING: self.masking_dir,
             StageName.SEMANTIC_DETECTION: self.semantics_dir,
             StageName.SCENE_GRAPH: self.scene_graph_dir,
             StageName.GENERATIVE_COMPLETION: self.completion_dir,
@@ -144,6 +149,7 @@ class JobPaths:
             self.reconstruction_dir,
             self.geometry_dir,
             self.depth_dir,
+            self.masking_dir,
             self.semantics_dir,
             self.scene_graph_dir,
             self.completion_dir,

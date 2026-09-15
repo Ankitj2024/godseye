@@ -39,6 +39,7 @@ class ModalSettings(ConfigSection):
     geometry_function: str = "postprocess_geometry"
     depth_function: str = "enhance_depth"
     semantic_function: str = "detect_semantics"
+    masking_function: str = "generate_masks"
     generative_function: str = "complete_generative_scene"
     ping_function: str = "ping"
     jobs_prefix: str = "jobs"
@@ -162,6 +163,16 @@ class DepthSettings(ConfigSection):
     use_gpu: bool = True
 
 
+class MaskingSettings(ConfigSection):
+    """2D semantic masking to ignore dynamic objects during reconstruction."""
+
+    classes: list[str] = Field(
+        default_factory=lambda: ["vehicle", "person"]
+    )
+    use_gpu: bool = True
+    confidence_threshold: float = 0.35
+
+
 class SemanticSettings(ConfigSection):
     """3D semantic object detection, executed on Modal."""
 
@@ -205,6 +216,7 @@ class PipelineConfig(BaseSettings):
     reconstruction: ReconstructionSettings = Field(default_factory=ReconstructionSettings)
     geometry: GeometrySettings = Field(default_factory=GeometrySettings)
     depth: DepthSettings = Field(default_factory=DepthSettings)
+    masking: MaskingSettings = Field(default_factory=MaskingSettings)
     semantics: SemanticSettings = Field(default_factory=SemanticSettings)
     generative: GenerativeSettings = Field(default_factory=GenerativeSettings)
 

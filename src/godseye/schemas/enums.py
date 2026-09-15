@@ -27,6 +27,7 @@ class StageName(str, Enum):
     JOB_SETUP = "job_setup"
     FRAME_EXTRACTION = "frame_extraction"
     KEYFRAME_SELECTION = "keyframe_selection"
+    SEMANTIC_MASKING = "semantic_masking"
     RECONSTRUCTION_EXACT = "reconstruction_exact"
     GEOMETRY_POSTPROCESS = "geometry_postprocess"
     DEPTH_ENHANCEMENT = "depth_enhancement"

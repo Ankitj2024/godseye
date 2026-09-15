@@ -85,11 +85,25 @@ def reconstruct_exact(payload: dict[str, Any]) -> dict[str, Any]:
                 "overlapping views to reconstruct anything."
             )
 
+        masks_dir = None
+        masks_prefix = payload.get("masks_prefix")
+        if masks_prefix:
+            remote_masks = to_container_path(masks_prefix)
+            if remote_masks.exists():
+                masks_dir = workspace / "masks"
+                masks_dir.mkdir(parents=True, exist_ok=True)
+                mask_count = _copy_masks(remote_masks, masks_dir)
+                if mask_count > 0:
+                    info["mask_count"] = mask_count
+                else:
+                    masks_dir = None
+
         driver = ColmapDriver(
             images_dir=images_dir,
             workspace=workspace,
             log_dir=log_dir,
             use_gpu=bool(payload.get("use_gpu", True)),
+            masks_dir=masks_dir,
         )
 
         started = time.perf_counter()
@@ -186,6 +200,15 @@ def _copy_images(source: Path, destination: Path) -> int:
     count = 0
     for path in sorted(source.rglob("*")):
         if path.is_file() and path.suffix.lower() in IMAGE_SUFFIXES:
+            shutil.copy2(path, destination / path.name)
+            count += 1
+    return count
+
+
+def _copy_masks(source: Path, destination: Path) -> int:
+    count = 0
+    for path in sorted(source.rglob("*.png")):
+        if path.is_file():
             shutil.copy2(path, destination / path.name)
             count += 1
     return count

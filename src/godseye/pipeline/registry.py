@@ -20,6 +20,7 @@ from godseye.stages import (
     OutputPackagingStage,
     SceneGraphStage,
     SemanticDetectionStage,
+    SemanticMaskingStage,
 )
 
 
@@ -28,6 +29,7 @@ def all_stages() -> list[Stage]:
     return [
         FrameExtractionStage(),
         KeyframeSelectionStage(),
+        SemanticMaskingStage(),
         ExactReconstructionStage(),
         GeometryPostprocessStage(),
         DepthEnhancementStage(),

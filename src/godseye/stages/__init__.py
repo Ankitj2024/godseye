@@ -10,6 +10,7 @@ from godseye.stages.reconstruction_exact import ExactReconstructionStage
 from godseye.stages.remote_stage import RemoteStage
 from godseye.stages.scene_graph import SceneGraphStage
 from godseye.stages.semantic_detection import SemanticDetectionStage
+from godseye.stages.semantic_masking import SemanticMaskingStage
 
 __all__ = [
     "DepthEnhancementStage",
@@ -22,5 +23,5 @@ __all__ = [
     "RemoteStage",
     "SceneGraphStage",
     "SemanticDetectionStage",
+    "SemanticMaskingStage",
 ]
-

@@ -16,12 +16,14 @@ from modal_app.diagnostics import ping
 from modal_app.geometry.worker import postprocess_geometry
 from modal_app.reconstruction.worker import reconstruct_exact
 from modal_app.semantics.worker import detect_semantics
+from modal_app.semantics.masking_worker import generate_masks
 
 __all__ = [
     "app",
     "complete_generative_scene",
     "detect_semantics",
     "enhance_depth",
+    "generate_masks",
     "ping",
     "postprocess_geometry",
     "reconstruct_exact",

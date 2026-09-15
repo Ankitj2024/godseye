@@ -122,10 +122,36 @@
       margin-bottom: 12px;
     }
     
-    .right-panel { left: auto; right: 24px; display: none; }
+    /* Right Sidebar Container */
+    .right-sidebar {
+      position: absolute;
+      top: 88px;
+      right: 24px;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 10;
+      pointer-events: none;
+      max-height: calc(100vh - 112px);
+    }
+    
+    .right-panel {
+      position: relative;
+      top: auto;
+      left: auto;
+      right: auto;
+      width: 100%;
+      display: none;
+      pointer-events: auto;
+      box-sizing: border-box;
+      max-height: calc(100vh - 380px);
+      flex-direction: column;
+      gap: 16px;
+    }
     
     /* Tree View */
-    .tree-container { font-family: var(--font-code); font-size: 13px; max-height: calc(100vh - 160px); overflow-y: auto; }
+    .tree-container { font-family: var(--font-code); font-size: 13px; max-height: 280px; overflow-y: auto; }
     .tree-folder { display: flex; align-items: center; gap: 6px; color: var(--colors-ink); cursor: pointer; padding: 4px 0; }
     .tree-folder:hover { color: var(--colors-charcoal); }
     .tree-items { padding-left: 20px; border-left: 1px solid var(--colors-hairline); margin-left: 7px; margin-top: 4px; display: none; }
@@ -178,7 +204,8 @@
       position: absolute; bottom: 24px; right: 24px; width: 320px;
       background: var(--colors-canvas);
       border: 1px solid var(--colors-hairline); border-radius: var(--rounded-lg);
-      padding: 24px; z-index: 10; display: none;
+      padding: 24px; z-index: 20; display: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
     .card-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
     #card-class { font-family: var(--font-display); font-weight: 500; font-size: 20px; color: var(--colors-ink); text-transform: capitalize; }
@@ -188,6 +215,26 @@
     .card-details { font-size: 14px; color: var(--colors-body); display: grid; gap: 8px; }
     .card-details-row { display: flex; justify-content: space-between; }
     .card-details-val { color: var(--colors-ink); font-family: var(--font-code); font-size: 14px; }
+
+    /* Video Preview */
+    #video-panel {
+      position: relative; width: 100%;
+      background: transparent;
+      border: none;
+      padding: 0;
+      z-index: 10; display: none; flex-direction: column; gap: 8px;
+      pointer-events: auto; box-sizing: border-box;
+    }
+    #video-dropzone {
+      width: 100%; height: 140px; border: 1px dashed var(--colors-hairline);
+      background: var(--colors-canvas);
+      border-radius: var(--rounded-lg); display: flex; align-items: center; justify-content: center;
+      color: var(--colors-mute); font-size: 13px; cursor: pointer; transition: 0.2s;
+      text-align: center; padding: 12px; box-sizing: border-box;
+    }
+    #video-dropzone.dragover { border-color: var(--colors-ink); color: var(--colors-ink); background: var(--colors-surface-soft); }
+    #reference-video { width: 100%; border-radius: var(--rounded-lg); display: none; outline: none; background: #000; max-height: 200px; }
+
 
     /* Loading */
     #loading {
@@ -283,10 +330,18 @@
     <button class="btn-secondary" onclick="resetCamera()">Reset Camera</button>
   </div>
 
-  <div class="control-panel right-panel" id="object-tree-panel">
-    <div class="panel-section-title">Scene Graph</div>
-    <div id="object-tree-container" class="tree-container">
-      <div style="font-size: 13px; color: var(--colors-mute);">No objects loaded</div>
+  <div class="right-sidebar">
+    <div id="video-panel">
+      <div class="panel-section-title" style="font-size: 14px; margin-bottom: 4px;">Reference Video</div>
+      <div id="video-dropzone">Drop video file here (or click)</div>
+      <video id="reference-video" controls loop muted playsinline></video>
+    </div>
+
+    <div class="control-panel right-panel" id="object-tree-panel">
+      <div class="panel-section-title">Scene Graph</div>
+      <div id="object-tree-container" class="tree-container">
+        <div style="font-size: 13px; color: var(--colors-mute);">No objects loaded</div>
+      </div>
     </div>
   </div>
 
@@ -543,6 +598,7 @@
       document.getElementById('picker-overlay').style.display = 'none';
       document.getElementById('loading').style.display = 'flex';
       document.getElementById('main-panel').style.display = 'flex';
+      document.getElementById('video-panel').style.display = 'flex';
 
       // Parse folder name for job ID display
       const folderName = files[0].webkitRelativePath.split('/')[0];
@@ -635,6 +691,37 @@
           URL.revokeObjectURL(url);
         });
       }
+    });
+
+    // Video Dropzone Handling
+    const dropzone = document.getElementById('video-dropzone');
+    const refVideo = document.getElementById('reference-video');
+
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    
+    const handleVideoFile = (file) => {
+      if (file && file.type.startsWith('video/')) {
+        const url = URL.createObjectURL(file);
+        refVideo.src = url;
+        dropzone.style.display = 'none';
+        refVideo.style.display = 'block';
+        refVideo.play();
+      }
+    };
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleVideoFile(e.dataTransfer.files[0]);
+    });
+
+    dropzone.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'video/*';
+      input.onchange = (e) => handleVideoFile(e.target.files[0]);
+      input.click();
     });
 
     initThree();

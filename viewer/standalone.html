@@ -248,6 +248,56 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     #loading-msg { font-size: 16px; color: var(--colors-body); }
+
+    /* Tabs */
+    .tabs-container {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 8px;
+      background: var(--colors-canvas);
+      padding: 8px 12px;
+      border-radius: var(--rounded-lg);
+      border: 1px solid var(--colors-hairline);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      max-width: 60%;
+      overflow-x: auto;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .tabs-container::-webkit-scrollbar-thumb {
+      background: var(--colors-hairline);
+      border-radius: 4px;
+    }
+
+    .tab {
+      background: var(--colors-surface-soft);
+      border: 1px solid transparent;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: var(--font-code);
+      color: var(--colors-body);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      background: var(--colors-hairline);
+      color: var(--colors-ink);
+    }
+
+    .tab.active {
+      background: var(--colors-primary);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -300,6 +350,10 @@
     <div>
       <div class="panel-section-title">Layers</div>
       <div class="toggle-group">
+        <div class="toggle-row" onclick="toggleLayer('splats')">
+          <span>Gaussian Splats</span>
+          <div class="toggle-switch active" id="toggle-splats"></div>
+        </div>
         <div class="toggle-row" onclick="toggleLayer('mesh')">
           <span>3D Geometry</span>
           <div class="toggle-switch active" id="toggle-mesh"></div>
@@ -362,17 +416,21 @@
 
   <div id="viewport"></div>
 
+  <!-- Job Tabs -->
+  <div class="tabs-container" id="job-tabs"></div>
+
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TrackballControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"></script>
+  <script src="https://unpkg.com/@mkkellogg/gaussian-splats-3d@0.4.2/build/gaussian-splats-3d.umd.js"></script>
 
   <script>
     let scene, camera, renderer, controls;
-    let meshGroup, cuboidGroup, gridHelper, pointcloudGroup, depthGroup;
+    let meshGroup, cuboidGroup, gridHelper, pointcloudGroup, depthGroup, splatsGroup;
     
-    const layers = { mesh: true, wireframe: false, cuboids: true, grid: true, pointcloud: false, depthcloud: false };
+    const layers = { mesh: true, wireframe: false, cuboids: true, grid: true, pointcloud: false, depthcloud: false, splats: true };
     const classColors = { vehicle: 0x525252, building: 0x525252, tree: 0x525252, road: 0x525252, person: 0x525252, default: 0x525252 };
 
     // Setup ThreeJS
@@ -412,6 +470,7 @@
       cuboidGroup = new THREE.Group();
       pointcloudGroup = new THREE.Group();
       depthGroup = new THREE.Group();
+      splatsGroup = new THREE.Group();
       
       pointcloudGroup.visible = false;
       depthGroup.visible = false;
@@ -420,6 +479,7 @@
       scene.add(cuboidGroup);
       scene.add(pointcloudGroup);
       scene.add(depthGroup);
+      scene.add(splatsGroup);
 
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -576,6 +636,7 @@
       if (layer === 'cuboids') cuboidGroup.visible = layers.cuboids;
       if (layer === 'pointcloud') pointcloudGroup.visible = layers.pointcloud;
       if (layer === 'depthcloud') depthGroup.visible = layers.depthcloud;
+      if (layer === 'splats') splatsGroup.visible = layers.splats;
       if (layer === 'grid') gridHelper.visible = layers.grid;
       if (layer === 'wireframe') {
         meshGroup.traverse((child) => {
@@ -591,18 +652,79 @@
     }
 
     // Local Directory Handling
+    let loadedJobs = {};
+
     document.getElementById('folder-input').addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files);
-      if (files.length === 0) return;
+      const allFiles = Array.from(e.target.files);
+      if (allFiles.length === 0) return;
 
       document.getElementById('picker-overlay').style.display = 'none';
       document.getElementById('loading').style.display = 'flex';
       document.getElementById('main-panel').style.display = 'flex';
       document.getElementById('video-panel').style.display = 'flex';
 
-      // Parse folder name for job ID display
-      const folderName = files[0].webkitRelativePath.split('/')[0];
-      document.getElementById('job-id-display').textContent = folderName;
+      // Group files by job ID
+      loadedJobs = {};
+      allFiles.forEach(f => {
+         const parts = f.webkitRelativePath.split('/');
+         if (parts.length < 2) return;
+         
+         let jobId;
+         if (parts.length >= 3 && parts[0].toLowerCase() === 'outputs') {
+             jobId = parts[1];
+         } else {
+             jobId = parts[0];
+         }
+         
+         if (!loadedJobs[jobId]) loadedJobs[jobId] = [];
+         loadedJobs[jobId].push(f);
+      });
+
+      const jobIds = Object.keys(loadedJobs).sort((a, b) => b.localeCompare(a));
+      
+      // Setup tabs
+      const tabsContainer = document.getElementById('job-tabs');
+      tabsContainer.innerHTML = '';
+      if (jobIds.length > 1) {
+         tabsContainer.style.display = 'flex';
+         jobIds.forEach(jobId => {
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            tab.id = `tab-${jobId}`;
+            tab.textContent = jobId.length > 18 ? jobId.substring(0, 15) + '...' : jobId;
+            tab.title = jobId;
+            tab.onclick = () => loadJob(jobId);
+            tabsContainer.appendChild(tab);
+         });
+      }
+
+      // Load first job
+      if (jobIds.length > 0) {
+         loadJob(jobIds[0]);
+      } else {
+         document.getElementById('loading').style.display = 'none';
+      }
+    });
+
+    async function loadJob(jobId) {
+      document.getElementById('loading').style.display = 'flex';
+      
+      // Update active tab
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      const activeTab = document.getElementById(`tab-${jobId}`);
+      if (activeTab) activeTab.classList.add('active');
+
+      document.getElementById('job-id-display').textContent = jobId;
+
+      const files = loadedJobs[jobId];
+      if (!files) return;
+
+      // Clear current scene
+      meshGroup.clear();
+      cuboidGroup.clear();
+      pointcloudGroup.clear();
+      depthGroup.clear();
+      splatsGroup.clear();
 
       const getFile = (name) => files.find(f => f.name === name);
       
@@ -611,6 +733,23 @@
       const sceneFile = getFile('scene.json');
       const rawPlyFile = getFile('pointcloud.ply');
       const depthPlyFile = getFile('depth_pointcloud.ply');
+      const splatFile = getFile('scene.splat');
+
+      // Load Splats
+      if (splatFile && window.GaussianSplats3D) {
+        updateLoading('Loading scene.splat...');
+        const url = URL.createObjectURL(splatFile);
+        const splatViewer = new GaussianSplats3D.DropInViewer({
+          'sharedMemoryForWorkers': false,
+          'gpuAcceleratedSort': true,
+        });
+        splatsGroup.add(splatViewer);
+        splatViewer.addSplatScene(url, {
+          'splatAlphaCrop': 0.1
+        }).then(() => {
+          document.getElementById('loading').style.display = 'none';
+        });
+      }
 
       // 1. Load Stats
       if (sceneFile) {
@@ -691,7 +830,7 @@
           URL.revokeObjectURL(url);
         });
       }
-    });
+    }
 
     // Video Dropzone Handling
     const dropzone = document.getElementById('video-dropzone');

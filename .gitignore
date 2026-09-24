@@ -16,25 +16,18 @@ venv/
 .env.*
 !.env.example
 
-# God's Eye runtime data
-work/*
-!work/.gitkeep
-outputs/*
-!outputs/.gitkeep
-
-# Local media (drone footage is large; keep it out of git)
-*.mp4
-*.mov
-*.MP4
-*.MOV
-*.mkv
-*.avi
-
-# Generated 3D artifacts
-*.ply
-*.glb
-*.gltf
-*.obj
-
 # OS
 .DS_Store
+
+# Generated Data and Outputs
+work/
+outputs/
+temp.js
+
+# Keep videos
+!*.mp4
+!*.avi
+!*.mov
+!*.mkv
+!work/**/*.mp4
+!outputs/**/*.mp4

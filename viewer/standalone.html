@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,12 +19,13 @@
       --colors-charcoal: #525252;
       --colors-body: #737373;
       --colors-mute: #a3a3a3;
-      
+
       --rounded-full: 9999px;
       --rounded-lg: 12px;
       --rounded-none: 0px;
 
-      --font-display: -apple-system-ui-serif, ui-sans-serif, system-ui, sans-serif; /* Fallback for SF Pro Rounded */
+      --font-display: -apple-system-ui-serif, ui-sans-serif, system-ui, sans-serif;
+      /* Fallback for SF Pro Rounded */
       --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
@@ -35,93 +37,210 @@
       }
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    
-    body, html {
-      width: 100%; height: 100%; overflow: hidden;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body,
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: var(--colors-canvas);
       font-family: var(--font-body);
       color: var(--colors-ink);
       -webkit-font-smoothing: antialiased;
     }
-    
-    #viewport { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+    #viewport {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
 
     /* Picker Overlay */
     #picker-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--colors-canvas); z-index: 200;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 24px; text-align: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--colors-canvas);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      text-align: center;
     }
-    
-    #picker-overlay h1 { 
+
+    #picker-overlay h1 {
       font-family: var(--font-display);
-      font-size: 36px; 
+      font-size: 36px;
       font-weight: 500;
       line-height: 1.11;
-      color: var(--colors-ink); 
+      color: var(--colors-ink);
     }
-    
-    #picker-overlay p { 
-      font-size: 16px; 
+
+    #picker-overlay p {
+      font-size: 16px;
       font-weight: 400;
-      color: var(--colors-body); 
-      max-width: 400px; 
-      line-height: 1.5; 
+      color: var(--colors-body);
+      max-width: 400px;
+      line-height: 1.5;
     }
-    
+
     .file-input-wrapper {
-      position: relative; overflow: hidden; display: inline-block;
-      background: var(--colors-primary); color: #ffffff; 
-      padding: 8px 20px; height: 36px;
-      border-radius: var(--rounded-full); 
-      font-weight: 500; font-size: 14px;
-      cursor: pointer; transition: background 0.2s;
-      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      background: var(--colors-primary);
+      color: #ffffff;
+      padding: 8px 20px;
+      height: 36px;
+      border-radius: var(--rounded-full);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .file-input-wrapper:hover { background: var(--colors-ink-deep); }
+
+    .file-input-wrapper:hover {
+      background: var(--colors-ink-deep);
+    }
+
     .file-input-wrapper input[type=file] {
-      font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
     }
 
     /* HUD */
     .hud-header {
-      position: absolute; top: 24px; left: 24px; right: 24px;
-      display: flex; justify-content: space-between; align-items: center;
-      z-index: 10; pointer-events: none;
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
     }
+
     .hud-title {
-      display: flex; align-items: center; gap: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       background: var(--colors-canvas);
-      padding: 8px 16px; border-radius: var(--rounded-full); 
+      padding: 8px 16px;
+      border-radius: var(--rounded-full);
       border: 1px solid var(--colors-hairline);
       pointer-events: auto;
     }
+
     .hud-badge {
-      color: var(--colors-ink); font-weight: 600; font-size: 14px;
+      color: var(--colors-ink);
+      font-weight: 600;
+      font-size: 14px;
       font-family: var(--font-display);
     }
+
     .hud-job-id {
       font-family: var(--font-code);
       font-size: 14px;
       color: var(--colors-mute);
     }
 
+    /* FPV Toggle Button */
+    .hud-actions { display:flex; align-items:center; gap:12px; pointer-events:auto; }
+    .fpv-btn {
+      display:flex; align-items:center; gap:8px;
+      background:var(--colors-canvas); color:var(--colors-ink);
+      border:1px solid var(--colors-hairline); border-radius:var(--rounded-full);
+      padding:8px 18px; height:38px; font-size:13px; font-weight:500;
+      cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.04);
+      transition:all .2s cubic-bezier(.16,1,.3,1);
+    }
+    .fpv-btn:hover { background:var(--colors-surface-soft); border-color:var(--colors-mute); transform:translateY(-1px); }
+    .fpv-btn.active { background:#000; color:#fff; border-color:#000; box-shadow:0 4px 16px rgba(0,0,0,.25); }
+    .fpv-btn-dot { width:8px; height:8px; border-radius:50%; background:#a3a3a3; transition:background .2s; }
+    .fpv-btn.active .fpv-btn-dot { background:#10b981; animation:pulse-dot 1.5s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.85)} }
+    .fpv-kbd {
+      font-family:var(--font-code); font-size:11px; padding:1px 6px; border-radius:4px;
+      background:var(--colors-surface-soft); color:var(--colors-body); border:1px solid var(--colors-hairline);
+    }
+    .fpv-btn.active .fpv-kbd { background:#262626; color:#e5e5e5; border-color:#404040; }
+
+    /* FPV HUD Overlay */
+    #fpv-hud { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:15; display:none; }
+    .fpv-crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:40px; height:40px; }
+    .fpv-crosshair::before,.fpv-crosshair::after { content:''; position:absolute; background:rgba(0,0,0,.45); }
+    .fpv-crosshair::before { top:19px; left:0; width:40px; height:2px; }
+    .fpv-crosshair::after { top:0; left:19px; width:2px; height:40px; }
+    .fpv-center-pip { position:absolute; top:17px; left:17px; width:6px; height:6px; border-radius:50%; background:rgba(0,0,0,.6); }
+    .fpv-telemetry-pill {
+      position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+      display:flex; align-items:center; gap:20px;
+      background:rgba(255,255,255,.92); backdrop-filter:blur(16px);
+      padding:9px 24px; border-radius:var(--rounded-full);
+      border:1px solid var(--colors-hairline); box-shadow:0 4px 20px rgba(0,0,0,.08);
+      font-family:var(--font-code); font-size:13px; color:var(--colors-ink);
+    }
+    .fpv-telemetry-item { display:flex; align-items:center; gap:6px; }
+    .fpv-telemetry-label { font-size:11px; color:var(--colors-body); font-weight:500; }
+    .fpv-telemetry-val { font-weight:600; color:var(--colors-ink); }
+    .fpv-legend-bar {
+      position:absolute; bottom:78px; left:50%; transform:translateX(-50%);
+      display:flex; align-items:center; gap:14px;
+      background:rgba(15,15,15,.82); backdrop-filter:blur(12px);
+      color:#f5f5f5; padding:7px 18px; border-radius:var(--rounded-full);
+      font-size:12px; font-family:var(--font-body); pointer-events:none;
+      box-shadow:0 4px 16px rgba(0,0,0,.15);
+    }
+    .fpv-legend-bar kbd {
+      background:rgba(255,255,255,.22); padding:2px 6px; border-radius:4px;
+      font-family:var(--font-code); font-size:11px; font-weight:600; color:#fff;
+    }
+
     /* Sidebar / Control Panel */
     .control-panel {
-      position: absolute; top: 88px; left: 24px; width: 320px;
+      position: absolute;
+      top: 88px;
+      left: 24px;
+      width: 320px;
       background: var(--colors-canvas);
-      border: 1px solid var(--colors-hairline); 
+      border: 1px solid var(--colors-hairline);
       border-radius: var(--rounded-lg);
-      padding: 16px; z-index: 10; display: none; flex-direction: column; gap: 24px;
+      padding: 16px;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      gap: 24px;
     }
+
     .panel-section-title {
       font-family: var(--font-display);
-      font-size: 18px; font-weight: 500; color: var(--colors-ink);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--colors-ink);
       margin-bottom: 12px;
     }
-    
+
     /* Right Sidebar Container */
     .right-sidebar {
       position: absolute;
@@ -135,7 +254,7 @@
       pointer-events: none;
       max-height: calc(100vh - 112px);
     }
-    
+
     .right-panel {
       position: relative;
       top: auto;
@@ -149,105 +268,292 @@
       flex-direction: column;
       gap: 16px;
     }
-    
+
     /* Tree View */
-    .tree-container { font-family: var(--font-code); font-size: 13px; max-height: 280px; overflow-y: auto; }
-    .tree-folder { display: flex; align-items: center; gap: 6px; color: var(--colors-ink); cursor: pointer; padding: 4px 0; }
-    .tree-folder:hover { color: var(--colors-charcoal); }
-    .tree-items { padding-left: 20px; border-left: 1px solid var(--colors-hairline); margin-left: 7px; margin-top: 4px; display: none; }
-    .tree-items.open { display: block; }
-    .tree-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; }
-    .tree-item:hover { background: var(--colors-surface-soft); }
-    .tree-icon { opacity: 0.5; font-size: 12px; }
-    
+    .tree-container {
+      font-family: var(--font-code);
+      font-size: 13px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .tree-folder {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--colors-ink);
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .tree-folder:hover {
+      color: var(--colors-charcoal);
+    }
+
+    .tree-items {
+      padding-left: 20px;
+      border-left: 1px solid var(--colors-hairline);
+      margin-left: 7px;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .tree-items.open {
+      display: block;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 2px;
+    }
+
+    .tree-item:hover {
+      background: var(--colors-surface-soft);
+    }
+
+    .tree-icon {
+      opacity: 0.5;
+      font-size: 12px;
+    }
+
     .toggle-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 16px; background: var(--colors-surface-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--colors-surface-soft);
       border-radius: var(--rounded-full);
-      font-size: 14px; font-weight: 400; color: var(--colors-ink);
-      cursor: pointer; margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--colors-ink);
+      cursor: pointer;
+      margin-bottom: 8px;
     }
-    
+
     .toggle-switch {
-      position: relative; width: 36px; height: 20px;
-      background: var(--colors-hairline); border-radius: var(--rounded-full);
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: var(--colors-hairline);
+      border-radius: var(--rounded-full);
     }
-    .toggle-switch.active { background: var(--colors-primary); }
+
+    .toggle-switch.active {
+      background: var(--colors-primary);
+    }
+
     .toggle-switch::after {
-      content: ''; position: absolute; top: 2px; left: 2px;
-      width: 16px; height: 16px; background: #fff; border-radius: var(--rounded-full);
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: var(--rounded-full);
       transition: transform 0.2s;
     }
-    .toggle-switch.active::after { transform: translateX(16px); }
 
-    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .toggle-switch.active::after {
+      transform: translateX(16px);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
     .stat-card {
       background: var(--colors-surface-soft);
-      padding: 12px; border-radius: var(--rounded-lg);
+      padding: 12px;
+      border-radius: var(--rounded-lg);
     }
-    .stat-label { font-size: 12px; color: var(--colors-body); font-weight: 400; }
-    .stat-val { font-family: var(--font-code); font-size: 16px; font-weight: 500; color: var(--colors-ink); margin-top: 4px; }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--colors-body);
+      font-weight: 400;
+    }
+
+    .stat-val {
+      font-family: var(--font-code);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--colors-ink);
+      margin-top: 4px;
+    }
 
     /* Buttons */
     .btn-secondary {
-      background: var(--colors-canvas); color: var(--colors-ink);
+      background: var(--colors-canvas);
+      color: var(--colors-ink);
       border: 1px solid var(--colors-hairline);
       border-radius: var(--rounded-full);
-      padding: 8px 20px; height: 36px;
-      font-size: 14px; font-weight: 500;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      padding: 8px 20px;
+      height: 36px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       margin-top: 8px;
     }
 
     /* Object Card */
     #object-card {
-      position: absolute; bottom: 24px; right: 24px; width: 320px;
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 320px;
       background: var(--colors-canvas);
-      border: 1px solid var(--colors-hairline); border-radius: var(--rounded-lg);
-      padding: 24px; z-index: 20; display: none;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid var(--colors-hairline);
+      border-radius: var(--rounded-lg);
+      padding: 24px;
+      z-index: 20;
+      display: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     }
-    .card-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    #card-class { font-family: var(--font-display); font-weight: 500; font-size: 20px; color: var(--colors-ink); text-transform: capitalize; }
-    #card-id { font-family: var(--font-code); font-size: 12px; color: var(--colors-mute); margin-top: 4px; }
-    #card-conf { background: var(--colors-surface-soft); color: var(--colors-ink); padding: 4px 12px; border-radius: var(--rounded-full); font-size: 12px; font-weight: 500; }
-    
-    .card-details { font-size: 14px; color: var(--colors-body); display: grid; gap: 8px; }
-    .card-details-row { display: flex; justify-content: space-between; }
-    .card-details-val { color: var(--colors-ink); font-family: var(--font-code); font-size: 14px; }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    #card-class {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 20px;
+      color: var(--colors-ink);
+      text-transform: capitalize;
+    }
+
+    #card-id {
+      font-family: var(--font-code);
+      font-size: 12px;
+      color: var(--colors-mute);
+      margin-top: 4px;
+    }
+
+    #card-conf {
+      background: var(--colors-surface-soft);
+      color: var(--colors-ink);
+      padding: 4px 12px;
+      border-radius: var(--rounded-full);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .card-details {
+      font-size: 14px;
+      color: var(--colors-body);
+      display: grid;
+      gap: 8px;
+    }
+
+    .card-details-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .card-details-val {
+      color: var(--colors-ink);
+      font-family: var(--font-code);
+      font-size: 14px;
+    }
 
     /* Video Preview */
     #video-panel {
-      position: relative; width: 100%;
+      position: relative;
+      width: 100%;
       background: transparent;
       border: none;
       padding: 0;
-      z-index: 10; display: none; flex-direction: column; gap: 8px;
-      pointer-events: auto; box-sizing: border-box;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      box-sizing: border-box;
     }
+
     #video-dropzone {
-      width: 100%; height: 140px; border: 1px dashed var(--colors-hairline);
+      width: 100%;
+      height: 140px;
+      border: 1px dashed var(--colors-hairline);
       background: var(--colors-canvas);
-      border-radius: var(--rounded-lg); display: flex; align-items: center; justify-content: center;
-      color: var(--colors-mute); font-size: 13px; cursor: pointer; transition: 0.2s;
-      text-align: center; padding: 12px; box-sizing: border-box;
+      border-radius: var(--rounded-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--colors-mute);
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+      padding: 12px;
+      box-sizing: border-box;
     }
-    #video-dropzone.dragover { border-color: var(--colors-ink); color: var(--colors-ink); background: var(--colors-surface-soft); }
-    #reference-video { width: 100%; border-radius: var(--rounded-lg); display: none; outline: none; background: #000; max-height: 200px; }
+
+    #video-dropzone.dragover {
+      border-color: var(--colors-ink);
+      color: var(--colors-ink);
+      background: var(--colors-surface-soft);
+    }
+
+    #reference-video {
+      width: 100%;
+      border-radius: var(--rounded-lg);
+      display: none;
+      outline: none;
+      background: #000;
+      max-height: 200px;
+    }
 
 
     /* Loading */
     #loading {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--colors-canvas); display: none; flex-direction: column;
-      align-items: center; justify-content: center; z-index: 100; gap: 16px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--colors-canvas);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      gap: 16px;
     }
+
     .spinner {
-      width: 32px; height: 32px; border: 2px solid var(--colors-hairline);
-      border-top-color: var(--colors-primary); border-radius: var(--rounded-full); animation: spin 1s linear infinite;
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--colors-hairline);
+      border-top-color: var(--colors-primary);
+      border-radius: var(--rounded-full);
+      animation: spin 1s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #loading-msg { font-size: 16px; color: var(--colors-body); }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #loading-msg {
+      font-size: 16px;
+      color: var(--colors-body);
+    }
 
     /* Tabs */
     .tabs-container {
@@ -300,6 +606,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Folder Picker Overlay -->
@@ -321,6 +628,13 @@
     <div class="hud-title">
       <div class="hud-badge">God's Eye</div>
       <div class="hud-job-id" id="job-id-display">LOCAL FOLDER</div>
+    </div>
+    <div class="hud-actions">
+      <button id="fpv-toggle-btn" class="fpv-btn" onclick="toggleFPVMode()" title="Toggle FPV Drone Mode (F)">
+        <span class="fpv-btn-dot"></span>
+        <span id="fpv-btn-text">FPV Drone Mode</span>
+        <span class="fpv-kbd">F</span>
+      </button>
     </div>
   </div>
 
@@ -352,7 +666,7 @@
       <div class="toggle-group">
         <div class="toggle-row" onclick="toggleLayer('splats')">
           <span>Gaussian Splats</span>
-          <div class="toggle-switch active" id="toggle-splats"></div>
+          <div class="toggle-switch" id="toggle-splats"></div>
         </div>
         <div class="toggle-row" onclick="toggleLayer('mesh')">
           <span>3D Geometry</span>
@@ -364,7 +678,7 @@
         </div>
         <div class="toggle-row" onclick="toggleLayer('cuboids')">
           <span>Semantic Objects</span>
-          <div class="toggle-switch active" id="toggle-cuboids"></div>
+          <div class="toggle-switch" id="toggle-cuboids"></div>
         </div>
         <div class="toggle-row" onclick="toggleLayer('pointcloud')">
           <span>Raw Pointcloud</span>
@@ -376,11 +690,11 @@
         </div>
         <div class="toggle-row" onclick="toggleLayer('grid')">
           <span>Environment Grid</span>
-          <div class="toggle-switch active" id="toggle-grid"></div>
+          <div class="toggle-switch" id="toggle-grid"></div>
         </div>
       </div>
     </div>
-    
+
     <button class="btn-secondary" onclick="resetCamera()">Reset Camera</button>
   </div>
 
@@ -410,7 +724,27 @@
     <div class="card-details">
       <div class="card-details-row"><span>Dimensions</span> <span id="card-dims" class="card-details-val"></span></div>
       <div class="card-details-row"><span>World Pos</span> <span id="card-pos" class="card-details-val"></span></div>
-      <div class="card-details-row"><span>Source</span> <span id="card-prov" class="card-details-val" style="font-family: var(--font-body); color: var(--colors-ink);"></span></div>
+      <div class="card-details-row"><span>Source</span> <span id="card-prov" class="card-details-val"
+          style="font-family: var(--font-body); color: var(--colors-ink);"></span></div>
+    </div>
+  </div>
+
+  <!-- FPV HUD Overlay -->
+  <div id="fpv-hud">
+    <div class="fpv-crosshair"><div class="fpv-center-pip"></div></div>
+    <div class="fpv-legend-bar">
+      <span><kbd>W</kbd> Forward</span> &bull;
+      <span><kbd>S</kbd> Back</span> &bull;
+      <span><kbd>A</kbd> Left</span> &bull;
+      <span><kbd>D</kbd> Right</span> &bull;
+      <span><kbd>Space</kbd> Up</span> &bull;
+      <span><kbd>Shift</kbd> Down</span> &bull;
+      <span><kbd>ESC</kbd>/<kbd>F</kbd> Exit</span>
+    </div>
+    <div class="fpv-telemetry-pill">
+      <div class="fpv-telemetry-item"><span class="fpv-telemetry-label">MODE</span><span class="fpv-telemetry-val" style="color:#10b981">FPV</span></div>
+      <div class="fpv-telemetry-item"><span class="fpv-telemetry-label">SPEED</span><span class="fpv-telemetry-val" id="fpv-speed">0.0 m/s</span></div>
+      <div class="fpv-telemetry-item"><span class="fpv-telemetry-label">ALT</span><span class="fpv-telemetry-val" id="fpv-alt">0.0 m</span></div>
     </div>
   </div>
 
@@ -429,8 +763,20 @@
   <script>
     let scene, camera, renderer, controls;
     let meshGroup, cuboidGroup, gridHelper, pointcloudGroup, depthGroup, splatsGroup;
-    
-    const layers = { mesh: true, wireframe: false, cuboids: true, grid: true, pointcloud: false, depthcloud: false, splats: true };
+    let clock = new THREE.Clock();
+
+    // FPV Drone State (True 6-DOF Unconstrained Acro Flight)
+    let fpvActive = false;
+    const fpvState = {
+      keys: { w:false, s:false, a:false, d:false, q:false, e:false, space:false, shift:false },
+      velocity: new THREE.Vector3(),
+      mouseDeltaX: 0,
+      mouseDeltaY: 0,
+      accelSpeed: 65.0, maxSpeed: 55.0, drag: 0.90,
+      turnSpeed: 2.2, mouseSensitivity: 0.0028
+    };
+
+    const layers = { mesh: true, wireframe: false, cuboids: false, grid: false, pointcloud: false, depthcloud: false, splats: false };
     const classColors = { vehicle: 0x525252, building: 0x525252, tree: 0x525252, road: 0x525252, person: 0x525252, default: 0x525252 };
 
     // Setup ThreeJS
@@ -464,6 +810,7 @@
       // Soft gray grid
       gridHelper = new THREE.GridHelper(100, 50, 0xe5e5e5, 0xfafafa);
       gridHelper.rotation.x = Math.PI / 2;
+      gridHelper.visible = false;
       scene.add(gridHelper);
 
       meshGroup = new THREE.Group();
@@ -471,9 +818,12 @@
       pointcloudGroup = new THREE.Group();
       depthGroup = new THREE.Group();
       splatsGroup = new THREE.Group();
-      
+
+      meshGroup.visible = true;
+      cuboidGroup.visible = false;
       pointcloudGroup.visible = false;
       depthGroup.visible = false;
+      splatsGroup.visible = false;
 
       scene.add(meshGroup);
       scene.add(cuboidGroup);
@@ -487,14 +837,189 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
+      setupFPVInput();
       setupRaycaster();
       animate();
     }
 
     function animate() {
       requestAnimationFrame(animate);
-      controls.update();
+      const delta = clock.getDelta();
+      if (fpvActive) {
+        updateFPV(delta);
+      } else {
+        controls.update();
+      }
+      splatsGroup.children.forEach(child => {
+        if (child && typeof child.update === 'function') child.update();
+      });
       renderer.render(scene, camera);
+    }
+
+    // ── FPV Flight Controller ──
+    function toggleFPVMode() {
+      fpvActive ? exitFPVMode() : enterFPVMode();
+    }
+
+    function enterFPVMode() {
+      if (fpvActive) return;
+      fpvActive = true;
+      controls.enabled = false;
+
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir).normalize();
+      fpvState.pitch = Math.asin(THREE.MathUtils.clamp(dir.z, -0.999, 0.999));
+      fpvState.yaw = Math.atan2(dir.x, dir.y);
+      fpvState.velocity.set(0, 0, 0);
+      fpvState.mouseDeltaX = 0;
+      fpvState.mouseDeltaY = 0;
+
+      document.getElementById('fpv-toggle-btn').classList.add('active');
+      document.getElementById('fpv-btn-text').textContent = 'Exit FPV Mode';
+      document.getElementById('fpv-hud').style.display = 'block';
+
+      const vp = document.getElementById('viewport');
+      if (vp && vp.requestPointerLock) vp.requestPointerLock();
+    }
+
+    function exitFPVMode() {
+      if (!fpvActive) return;
+      fpvActive = false;
+      if (document.pointerLockElement) document.exitPointerLock();
+
+      camera.up.set(0, 0, 1);
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir).normalize();
+      controls.target.copy(camera.position.clone().addScaledVector(dir, 20));
+      controls.enabled = true;
+      controls.update();
+
+      Object.keys(fpvState.keys).forEach(k => fpvState.keys[k] = false);
+      document.getElementById('fpv-toggle-btn').classList.remove('active');
+      document.getElementById('fpv-btn-text').textContent = 'FPV Drone Mode';
+      document.getElementById('fpv-hud').style.display = 'none';
+    }
+
+    function setupFPVInput() {
+      const vp = document.getElementById('viewport');
+      vp.addEventListener('click', () => {
+        if (fpvActive && document.pointerLockElement !== vp && vp.requestPointerLock) {
+          vp.requestPointerLock();
+        }
+      });
+
+      // Prevent wheel/scroll from tilting or zooming in FPV mode
+      window.addEventListener('wheel', (e) => {
+        if (fpvActive) e.preventDefault();
+      }, { passive: false });
+
+      window.addEventListener('keydown', (e) => {
+        if ((e.key === 'f' || e.key === 'F') && e.target.tagName !== 'INPUT') { toggleFPVMode(); return; }
+        if (!fpvActive) return;
+        if (e.key === 'Escape') { exitFPVMode(); return; }
+        const k = e.key.toLowerCase();
+        if (k === 'w') fpvState.keys.w = true;
+        if (k === 's') fpvState.keys.s = true;
+        if (k === 'a') fpvState.keys.a = true;
+        if (k === 'd') fpvState.keys.d = true;
+        if (k === 'q') fpvState.keys.q = true;
+        if (k === 'e') fpvState.keys.e = true;
+        if (e.code === 'Space') { fpvState.keys.space = true; e.preventDefault(); }
+        if (e.key === 'Shift') { fpvState.keys.shift = true; e.preventDefault(); }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (!fpvActive) return;
+        const k = e.key.toLowerCase();
+        if (k === 'w') fpvState.keys.w = false;
+        if (k === 's') fpvState.keys.s = false;
+        if (k === 'a') fpvState.keys.a = false;
+        if (k === 'd') fpvState.keys.d = false;
+        if (k === 'q') fpvState.keys.q = false;
+        if (k === 'e') fpvState.keys.e = false;
+        if (e.code === 'Space') fpvState.keys.space = false;
+        if (e.key === 'Shift') fpvState.keys.shift = false;
+      });
+
+      let lastX = null, lastY = null;
+      window.addEventListener('mousemove', (e) => {
+        if (!fpvActive) {
+          lastX = null;
+          lastY = null;
+          return;
+        }
+
+        let mx = e.movementX;
+        let my = e.movementY;
+
+        if (mx === undefined || my === undefined || (mx === 0 && my === 0 && lastX !== null)) {
+          mx = (lastX !== null) ? (e.clientX - lastX) : 0;
+          my = (lastY !== null) ? (e.clientY - lastY) : 0;
+        }
+
+        lastX = e.clientX;
+        lastY = e.clientY;
+
+        fpvState.mouseDeltaX += mx;
+        fpvState.mouseDeltaY += my;
+      });
+    }
+
+    function updateFPV(delta) {
+      const dt = Math.min(delta, 0.08);
+
+      // Pitch & Yaw input deltas
+      fpvState.pitch -= fpvState.mouseDeltaY * fpvState.mouseSensitivity;
+      fpvState.yaw   += fpvState.mouseDeltaX * fpvState.mouseSensitivity;
+
+      if (fpvState.keys.e) fpvState.yaw += fpvState.turnSpeed * dt;
+      if (fpvState.keys.q) fpvState.yaw -= fpvState.turnSpeed * dt;
+
+      // Clamp pitch to ±89.8° for clean vertical look with zero flip
+      fpvState.pitch = Math.max(-Math.PI * 0.499, Math.min(Math.PI * 0.499, fpvState.pitch));
+
+      fpvState.mouseDeltaX = 0;
+      fpvState.mouseDeltaY = 0;
+
+      // Reconstruct camera direction facing the model with zero roll
+      const cosP = Math.cos(fpvState.pitch);
+      const forward = new THREE.Vector3(
+        Math.sin(fpvState.yaw) * cosP,
+        Math.cos(fpvState.yaw) * cosP,
+        Math.sin(fpvState.pitch)
+      ).normalize();
+
+      camera.up.set(0, 0, 1);
+      camera.lookAt(camera.position.clone().add(forward));
+
+      // Pure horizontal right vector (perpendicular to heading on XY plane)
+      const horizRight = new THREE.Vector3(Math.cos(fpvState.yaw), -Math.sin(fpvState.yaw), 0);
+
+      // Acceleration along drone axes
+      const accel = new THREE.Vector3();
+      if (fpvState.keys.w) accel.add(forward);
+      if (fpvState.keys.s) accel.sub(forward);
+      if (fpvState.keys.d) accel.add(horizRight);
+      if (fpvState.keys.a) accel.sub(horizRight);
+      if (fpvState.keys.space) accel.z += 1.0;
+      if (fpvState.keys.shift) accel.z -= 1.0;
+
+      if (accel.lengthSq() > 0) {
+        accel.normalize().multiplyScalar(fpvState.accelSpeed * dt);
+        fpvState.velocity.add(accel);
+      }
+
+      fpvState.velocity.multiplyScalar(Math.pow(fpvState.drag, dt * 60));
+      const speed = fpvState.velocity.length();
+      if (speed > fpvState.maxSpeed) fpvState.velocity.setLength(fpvState.maxSpeed);
+
+      camera.position.addScaledVector(fpvState.velocity, dt);
+
+      // HUD Telemetry
+      const el1 = document.getElementById('fpv-speed');
+      const el2 = document.getElementById('fpv-alt');
+      if (el1) el1.textContent = `${speed.toFixed(1)} m/s`;
+      if (el2) el2.textContent = `${camera.position.z.toFixed(1)} m`;
     }
 
     function setupRaycaster() {
@@ -503,6 +1028,7 @@
       const card = document.getElementById('object-card');
 
       window.addEventListener('pointermove', (event) => {
+        if (fpvActive) { card.style.display = 'none'; return; }
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -548,7 +1074,7 @@
         objContainer.add(hitBox);
         cuboidGroup.add(objContainer);
       });
-      
+
       buildObjectTree(objects);
     }
 
@@ -557,7 +1083,7 @@
       const panel = document.getElementById('object-tree-panel');
       panel.style.display = 'flex';
       container.innerHTML = '';
-      
+
       if (objects.length === 0) {
         container.innerHTML = '<div style="font-size: 13px; color: var(--colors-mute);">No objects found</div>';
         return;
@@ -571,11 +1097,11 @@
 
       Object.keys(byClass).sort().forEach(cls => {
         const folderWrapper = document.createElement('div');
-        
+
         const folder = document.createElement('div');
         folder.className = 'tree-folder';
         folder.innerHTML = `<span style="font-size: 10px; width: 12px;">▼</span> <span>📁 ${cls}</span>`;
-        
+
         const items = document.createElement('div');
         items.className = 'tree-items open';
 
@@ -587,13 +1113,13 @@
         byClass[cls].forEach(obj => {
           const item = document.createElement('div');
           item.className = 'tree-item';
-          
+
           item.innerHTML = `
             <span class="tree-icon">📄</span>
             <span>${obj.object_id}</span>
             <span style="color: var(--colors-mute); font-size: 11px;">${Math.round(obj.confidence * 100)}%</span>
           `;
-          
+
           item.onclick = (e) => {
             e.stopPropagation();
             focusObject(obj);
@@ -610,14 +1136,14 @@
     function focusObject(obj) {
       const t = obj.transform.translation;
       const target = new THREE.Vector3(t.x, t.y, t.z);
-      
+
       controls.target.copy(target);
       // Position camera slightly above and pulled back from the object
       const maxD = Math.max(obj.dimensions.x, obj.dimensions.y, obj.dimensions.z);
       const dist = Math.max(maxD * 3, 10);
       camera.position.set(t.x, t.y - dist, t.z + dist * 0.8);
       controls.update();
-      
+
       // Auto-show cuboids layer if it's hidden so they can see what they clicked
       if (!layers.cuboids) {
         toggleLayer('cuboids');
@@ -666,49 +1192,49 @@
       // Group files by job ID
       loadedJobs = {};
       allFiles.forEach(f => {
-         const parts = f.webkitRelativePath.split('/');
-         if (parts.length < 2) return;
-         
-         let jobId;
-         if (parts.length >= 3 && parts[0].toLowerCase() === 'outputs') {
-             jobId = parts[1];
-         } else {
-             jobId = parts[0];
-         }
-         
-         if (!loadedJobs[jobId]) loadedJobs[jobId] = [];
-         loadedJobs[jobId].push(f);
+        const parts = f.webkitRelativePath.split('/');
+        if (parts.length < 2) return;
+
+        let jobId;
+        if (parts.length >= 3 && parts[0].toLowerCase() === 'outputs') {
+          jobId = parts[1];
+        } else {
+          jobId = parts[0];
+        }
+
+        if (!loadedJobs[jobId]) loadedJobs[jobId] = [];
+        loadedJobs[jobId].push(f);
       });
 
       const jobIds = Object.keys(loadedJobs).sort((a, b) => b.localeCompare(a));
-      
+
       // Setup tabs
       const tabsContainer = document.getElementById('job-tabs');
       tabsContainer.innerHTML = '';
       if (jobIds.length > 1) {
-         tabsContainer.style.display = 'flex';
-         jobIds.forEach(jobId => {
-            const tab = document.createElement('div');
-            tab.className = 'tab';
-            tab.id = `tab-${jobId}`;
-            tab.textContent = jobId.length > 18 ? jobId.substring(0, 15) + '...' : jobId;
-            tab.title = jobId;
-            tab.onclick = () => loadJob(jobId);
-            tabsContainer.appendChild(tab);
-         });
+        tabsContainer.style.display = 'flex';
+        jobIds.forEach(jobId => {
+          const tab = document.createElement('div');
+          tab.className = 'tab';
+          tab.id = `tab-${jobId}`;
+          tab.textContent = jobId.length > 18 ? jobId.substring(0, 15) + '...' : jobId;
+          tab.title = jobId;
+          tab.onclick = () => loadJob(jobId);
+          tabsContainer.appendChild(tab);
+        });
       }
 
       // Load first job
       if (jobIds.length > 0) {
-         loadJob(jobIds[0]);
+        loadJob(jobIds[0]);
       } else {
-         document.getElementById('loading').style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
       }
     });
 
     async function loadJob(jobId) {
       document.getElementById('loading').style.display = 'flex';
-      
+
       // Update active tab
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       const activeTab = document.getElementById(`tab-${jobId}`);
@@ -727,7 +1253,7 @@
       splatsGroup.clear();
 
       const getFile = (name) => files.find(f => f.name === name);
-      
+
       const glbFile = getFile('exact_scene.glb');
       const objectsFile = getFile('objects.json');
       const sceneFile = getFile('scene.json');
@@ -838,7 +1364,7 @@
 
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    
+
     const handleVideoFile = (file) => {
       if (file && file.type.startsWith('video/')) {
         const url = URL.createObjectURL(file);
@@ -866,4 +1392,5 @@
     initThree();
   </script>
 </body>
+
 </html>
